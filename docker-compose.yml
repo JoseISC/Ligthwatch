@@ -1,0 +1,19 @@
+services:
+  valhalla:
+    image: viktornr/valhalla-tiles:latest
+    ports:
+      - "8002:8002"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - valhalla
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
