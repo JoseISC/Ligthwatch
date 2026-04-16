@@ -11,7 +11,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-VALHALLA_URL = "http://localhost:8002/route"
+VALHALLA_URL = "http://valhalla:8002/route"
 
 @app.post("/route")
 async def route_proxy(body: dict):
