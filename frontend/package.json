@@ -12,6 +12,7 @@
     "vite": "^8.0.4"
   },
   "dependencies": {
+    "@mapbox/polyline": "^1.2.1",
     "maplibre-gl": "^5.23.0"
   }
 }

@@ -1,21 +1,23 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import httpx
 
 app = FastAPI()
 
-VALHALLA_URL = "http://valhalla:8002/route"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or restrict to your frontend
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/route")
-async def get_route():
-    payload = {
-        "locations": [
-            {"lat": -33.45, "lon": -70.66},
-            {"lat": -33.44, "lon": -70.65}
-        ],
-        "costing": "auto"
-    }
+VALHALLA_URL = "http://localhost:8002/route"
 
+@app.post("/route")
+async def route_proxy(body: dict):
     async with httpx.AsyncClient() as client:
-        response = await client.post(VALHALLA_URL, json=payload)
-
-    return response.json()
+        res = await client.post(
+            VALHALLA_URL,
+            json=body
+        )
+        return res.json()
