@@ -46,7 +46,8 @@ async function getRoute() {
 
   const body = {
     locations: points,
-    costing: "auto"
+    costing: "pedestrian",
+    costing_options:{"pedestrian":{"shortest":true}}
   };
 
   const res = await fetch("http://localhost:8000/route", {
