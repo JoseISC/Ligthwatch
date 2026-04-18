@@ -1,0 +1,24 @@
+services:
+  valhalla:
+    image: viktornr/valhalla-tiles:latest
+    ports:
+      - "8002:8002"
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_KEY: ${SUPABASE_KEY}
+    depends_on:
+      - valhalla
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
