@@ -50,6 +50,8 @@ async function getRoute() {
     costing_options:{"pedestrian":{"shortest":true}}
   };
 
+  console.log(body);
+
   const res = await fetch("http://localhost:8000/route", {
     method: "POST",
     headers: {
