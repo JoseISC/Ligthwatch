@@ -48,4 +48,4 @@ Registros de incidentes concretos, con ubicación geográfica y vínculo al tipo
 
 ## Uso en el backend
 
-El backend consulta la tabla `Incidentes` (por ejemplo, listados vía cliente Supabase). Las variables de conexión se documentan en `docs/env.md`.
+El backend consulta la tabla `Incidentes` (por ejemplo, listados vía cliente Supabase). Las variables de conexión se documentan en `docs/setup/env.md`.

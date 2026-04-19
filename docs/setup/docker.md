@@ -1,5 +1,7 @@
 # Docker — Configuración de contenedores
 
+Variables de entorno: ver `docs/setup/env.md`.
+
 ## Archivos creados/modificados
 
 | Archivo | Acción |
