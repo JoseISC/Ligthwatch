@@ -8,6 +8,12 @@
 |-----------|-----------|
 | [backend/main.md](backend/main.md) | API FastAPI: endpoints, Valhalla, Supabase, CORS |
 
+## Frontend
+
+| Documento | Contenido |
+|-----------|-----------|
+| [frontend/main.md](frontend/main.md) | Mapa MapLibre: rutas, incidentes, tipos, proxy Vite y `VITE_API_URL` |
+
 ## Datos
 
 | Documento | Contenido |

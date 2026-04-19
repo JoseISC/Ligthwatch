@@ -48,4 +48,12 @@ Registros de incidentes concretos, con ubicación geográfica y vínculo al tipo
 
 ## Uso en el backend
 
-El backend consulta la tabla `Incidentes` (por ejemplo, listados vía cliente Supabase). Las variables de conexión se documentan en `docs/setup/env.md`.
+El backend consulta y escribe en `TipoIncidentes` e `Incidentes` vía cliente Supabase. Las variables de conexión se documentan en `docs/setup/env.md`.
+
+**Coherencia de nombres:** PostgREST expone los nombres de columna tal cual están en PostgreSQL. Si el JSON de la API usa `duracion`, la tabla debe tener la columna `duracion` (mismo nombre). Si en un entorno aparece un error del tipo “column not found in schema cache”, revisar que la migración en Supabase coincida con `docs/datos/supabase.md` y con los modelos en `backend/app/main.py`.
+
+---
+
+## Uso en el frontend
+
+El mapa (`docs/frontend/main.md`) lista tipos con `GET /tipo-incidentes` y crea incidentes con `POST /incidentes`. Los tipos nuevos se envían con `POST /tipo-incidentes`.

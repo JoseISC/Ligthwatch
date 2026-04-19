@@ -52,7 +52,7 @@ Tablas y columnas: `docs/datos/supabase.md`.
 | `tipo_incidente` | string | Clave primaria, no vacía |
 | `descripcion_incidente` | string | Obligatorio |
 | `activo` | boolean | Default `true` |
-| `durecion` | entero opcional | Nombre de columna en BD (ver `docs/datos/supabase.md`; en esquema: `duracion`) |
+| `duracion` | entero opcional | Columna homónima en `TipoIncidentes` (ver `docs/datos/supabase.md`) |
 
 #### Cuerpo `POST /incidentes`
 

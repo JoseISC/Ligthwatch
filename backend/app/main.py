@@ -108,14 +108,14 @@ class TipoIncidente(BaseModel):
     created_at: Optional[str] = None
     descripcion_incidente: str
     activo: bool
-    durecion: Optional[int] = None
+    duracion: Optional[int] = None
 
 
 class TipoIncidenteCreate(BaseModel):
     tipo_incidente: str = Field(..., min_length=1, description="Clave primaria del tipo (única)")
     descripcion_incidente: str = Field(..., min_length=1)
     activo: bool = True
-    durecion: Optional[int] = Field(None, description="Duración asociada (columna `durecion` en la BD)")
+    duracion: Optional[int] = Field(None, description="Duración asociada (columna `duracion` en la BD)")
 
 
 class Incidente(BaseModel):

@@ -89,19 +89,18 @@ Es la fuente de datos geográficos base.
 
 ---
 
-### 🧭 MapLibre GL JS 3.23.0
+### 🧭 MapLibre GL JS (proyecto `frontend`)
 
-Es la librería de visualización de mapas considerada para una fase futura.
+Es la librería de visualización de mapas del cliente web (Vite + MapLibre GL JS).
 
 **Rol en el sistema:**
 
-* Mostrar mapas interactivos
-* Visualizar incidentes
-* Dibujar rutas generadas por Valhalla
-* Representar zonas de riesgo o nodos de prueba
+* Mostrar el mapa interactivo (estilo remoto vía OpenFreeMap)
+* Marcar dos puntos y solicitar una ruta al backend (`POST /route` → Valhalla)
+* Modo **incidente**: colocar un marcador, elegir un tipo desde `GET /tipo-incidentes` y enviar `POST /incidentes`
+* Formulario para **nuevo tipo de incidente** (`POST /tipo-incidentes`)
 
-**Nota:**
-No forma parte del backend MVP, pero sí del ecosistema futuro del proyecto.
+**Documentación detallada:** `docs/frontend/main.md`.
 
 ---
 
@@ -157,7 +156,7 @@ El flujo general del sistema será el siguiente:
    * envía la solicitud a Valhalla
 5. Valhalla calcula la ruta usando datos de OpenStreetMap.
 6. El backend devuelve la ruta como respuesta.
-7. En una futura etapa, MapLibre podrá mostrar la ruta en un mapa interactivo.
+7. El cliente web (MapLibre) puede mostrar la ruta y gestionar altas de incidentes y tipos contra la API.
 
 ---
 
@@ -170,7 +169,7 @@ El flujo general del sistema será el siguiente:
 | Supabase       | Persistencia de incidentes   |
 | Valhalla       | Cálculo de rutas             |
 | OpenStreetMap  | Datos geográficos            |
-| MapLibre GL JS | Visualización futura         |
+| MapLibre GL JS | Mapa, rutas e incidentes (frontend) |
 | Docker         | Entorno reproducible         |
 | Git/GitHub     | Control de versiones         |
 | REST API       | Comunicación entre servicios |
