@@ -69,10 +69,12 @@ Herramienta para manejar migraciones de base de datos.
 ## 📁 Ubicación esperada
 
 ```bash
-Ligthwatch/
-├── app/
+<raíz del repo>/
+├── backend/
+│   └── requirements.txt
 ├── docs/
-├── requirements.txt
+│   └── dependencias/
+│       └── requirements.md   # este documento
 └── README.md
 ```
 

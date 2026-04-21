@@ -1,17 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>MapProject</title>
+    <title>Safe Route — Mapa</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-      body, html { margin: 0; padding: 0; }
-      #map { width: 100vw; height: 100vh; }
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        width: 100vw;
+        height: 100vh;
+      }
     </style>
   </head>
   <body>
-    <div id="map"></div>
+    <div id="map" role="application" aria-label="Mapa"></div>
+    <nav class="map-toolbar" aria-label="Acciones">
+      <button type="button" id="routeBtn" class="map-toolbar__btn map-toolbar__btn--primary">
+        Calcular ruta
+      </button>
+      <button type="button" id="incidentModeBtn" class="map-toolbar__btn" aria-pressed="false">
+        Añadir incidente
+      </button>
+      <button type="button" id="newTipoBtn" class="map-toolbar__btn">Nuevo tipo de incidente</button>
+    </nav>
+    <p id="modeHint" class="map-hint map-hint--hidden" role="status" aria-live="polite"></p>
+    <div id="modalRoot"></div>
     <script type="module" src="/src/main.js"></script>
-    <button id="routeBtn">Calculate Route</button>
   </body>
 </html>
