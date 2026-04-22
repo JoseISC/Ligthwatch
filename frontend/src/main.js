@@ -39,30 +39,30 @@ map.addControl(new maplibregl.NavigationControl());
 let routeMarkers = [];
 let routePoints = [];
 
-/** @type {'route' | 'incident'} */
+/** @type {'route' | 'evento'} */
 let interactionMode = 'route';
 /** @type {maplibregl.Marker | null} */
-let incidentMarker = null;
+let eventoMarker = null;
 /** @type {{ lng: number; lat: number } | null} */
-let pendingIncidentCoords = null;
+let pendingEventoCoords = null;
 
 const routeBtn = document.getElementById('routeBtn');
-const incidentModeBtn = document.getElementById('incidentModeBtn');
+const eventoModeBtn = document.getElementById('eventoModeBtn');
 const newTipoBtn = document.getElementById('newTipoBtn');
 const modeHint = document.getElementById('modeHint');
 const modalRoot = document.getElementById('modalRoot');
 
 routeBtn.addEventListener('click', getRoute);
-incidentModeBtn.addEventListener('click', toggleIncidentMode);
+eventoModeBtn.addEventListener('click', toggleEventoMode);
 newTipoBtn.addEventListener('click', () => openTipoModal());
 
 map.on('click', (e) => {
   const { lng, lat } = e.lngLat;
 
-  if (interactionMode === 'incident') {
-    setIncidentMarker(lng, lat);
-    pendingIncidentCoords = { lng, lat };
-    openIncidentModal();
+  if (interactionMode === 'evento') {
+    setEventoMarker(lng, lat);
+    pendingEventoCoords = { lng, lat };
+    openEventoModal();
     return;
   }
 
@@ -78,41 +78,41 @@ map.on('click', (e) => {
   routeMarkers.push(marker);
 });
 
-function setIncidentMarker(lng, lat) {
-  if (incidentMarker) {
-    incidentMarker.remove();
-    incidentMarker = null;
+function setEventoMarker(lng, lat) {
+  if (eventoMarker) {
+    eventoMarker.remove();
+    eventoMarker = null;
   }
   const el = document.createElement('div');
-  el.className = 'incident-marker-dot';
-  el.setAttribute('title', 'Ubicación del incidente');
-  incidentMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+  el.className = 'evento-marker-dot';
+  el.setAttribute('title', 'Ubicación del Evento');
+  eventoMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
 }
 
-function toggleIncidentMode() {
-  const next = interactionMode === 'incident' ? 'route' : 'incident';
+function toggleEventoMode() {
+  const next = interactionMode === 'evento' ? 'route' : 'evento';
   interactionMode = next;
-  incidentModeBtn.setAttribute('aria-pressed', next === 'incident' ? 'true' : 'false');
+  eventoModeBtn.setAttribute('aria-pressed', next === 'evento' ? 'true' : 'false');
 
   if (next === 'route') {
-    clearIncidentPlacement();
+    clearEventoPlacement();
     modeHint.classList.add('map-hint--hidden');
     modeHint.textContent = '';
     return;
   }
 
   modeHint.textContent =
-    'Modo incidente: haz clic en el mapa para colocar el marcador. Luego elige el tipo de incidente.';
+    'Modo Evento: haz clic en el mapa para colocar el marcador. Luego elige el tipo de evento.';
   modeHint.classList.remove('map-hint--hidden');
 }
 
-function clearIncidentPlacement() {
-  if (incidentMarker) {
-    incidentMarker.remove();
-    incidentMarker = null;
+function clearEventoPlacement() {
+  if (eventoMarker) {
+    eventoMarker.remove();
+    eventoMarker = null;
   }
-  pendingIncidentCoords = null;
-  closeIncidentModal();
+  pendingEventoCoords = null;
+  closeEventoModal();
 }
 
 function setHintVisible(show, text) {
@@ -126,66 +126,66 @@ function setHintVisible(show, text) {
 
 // --- Modales ---
 
-let incidentModalEl = null;
+let eventoModalEl = null;
 let tipoModalEl = null;
 
-function closeIncidentModal() {
-  if (incidentModalEl) {
-    incidentModalEl.hidden = true;
+function closeEventoModal() {
+  if (eventoModalEl) {
+    eventoModalEl.hidden = true;
   }
 }
 
-function openIncidentModal() {
-  if (!pendingIncidentCoords) return;
+function openEventoModal() {
+  if (!pendingEventoCoords) return;
 
-  if (!incidentModalEl) {
-    incidentModalEl = document.createElement('div');
-    incidentModalEl.className = 'modal-overlay';
-    incidentModalEl.setAttribute('role', 'presentation');
-    incidentModalEl.innerHTML = `
-      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="incident-title" tabindex="-1">
-        <h2 id="incident-title">Registrar incidente</h2>
-        <p class="sub">Coordenadas del marcador. Elige un tipo existente (desde Supabase).</p>
+  if (!eventoModalEl) {
+    eventoModalEl = document.createElement('div');
+    eventoModalEl.className = 'modal-overlay';
+    eventoModalEl.setAttribute('role', 'presentation');
+    eventoModalEl.innerHTML = `
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="evento-title" tabindex="-1">
+        <h2 id="evento-title">Registrar Evento</h2>
+        <p class="sub">Coordenadas del marcador. Elige un tipo de evento existente (desde Supabase).</p>
         <div class="modal-field">
-          <label for="incident-tipo">Tipo de incidente</label>
-          <select id="incident-tipo" required></select>
+          <label for="evento-tipo">Tipo de evento</label>
+          <select id="evento-tipo" required></select>
         </div>
         <div class="modal-field">
           <label>Ubicación</label>
-          <input type="text" id="incident-coords" readonly />
+          <input type="text" id="evento-coords" readonly />
         </div>
-        <div class="modal-error" id="incident-error" hidden></div>
+        <div class="modal-error" id="evento-error" hidden></div>
         <div class="modal-actions">
-          <button type="button" id="incident-cancel">Cancelar</button>
-          <button type="submit" id="incident-submit">Guardar incidente</button>
+          <button type="button" id="evento-cancel">Cancelar</button>
+          <button type="submit" id="evento-submit">Guardar Evento</button>
         </div>
       </div>
     `;
-    modalRoot.appendChild(incidentModalEl);
+    modalRoot.appendChild(eventoModalEl);
 
-    incidentModalEl.querySelector('#incident-cancel').addEventListener('click', () => {
-      clearIncidentPlacement();
+    eventoModalEl.querySelector('#evento-cancel').addEventListener('click', () => {
+      clearEventoPlacement();
     });
-    incidentModalEl.addEventListener('click', (ev) => {
-      if (ev.target === incidentModalEl) clearIncidentPlacement();
+    eventoModalEl.addEventListener('click', (ev) => {
+      if (ev.target === eventoModalEl) clearEventoPlacement();
     });
-    incidentModalEl.querySelector('#incident-submit').addEventListener('click', submitIncident);
+    eventoModalEl.querySelector('#evento-submit').addEventListener('click', submitEvento);
   }
 
-  const err = incidentModalEl.querySelector('#incident-error');
+  const err = eventoModalEl.querySelector('#evento-error');
   err.hidden = true;
   err.textContent = '';
 
-  const coordsInput = incidentModalEl.querySelector('#incident-coords');
-  coordsInput.value = `${pendingIncidentCoords.lat.toFixed(6)}, ${pendingIncidentCoords.lng.toFixed(6)}`;
+  const coordsInput = eventoModalEl.querySelector('#evento-coords');
+  coordsInput.value = `${pendingEventoCoords.lat.toFixed(6)}, ${pendingEventoCoords.lng.toFixed(6)}`;
 
-  const select = incidentModalEl.querySelector('#incident-tipo');
+  const select = eventoModalEl.querySelector('#evento-tipo');
   select.innerHTML = '<option value="">Cargando…</option>';
   select.disabled = true;
 
-  incidentModalEl.hidden = false;
+  eventoModalEl.hidden = false;
 
-  fetchTipos()
+  fetchTiposEventos()
     .then((rows) => {
       select.disabled = false;
       select.innerHTML = '';
@@ -203,10 +203,10 @@ function openIncidentModal() {
       select.appendChild(placeholder);
       for (const row of rows) {
         const opt = document.createElement('option');
-        opt.value = row.tipo_incidente;
-        opt.textContent = row.descripcion_incidente
-          ? `${row.tipo_incidente} — ${row.descripcion_incidente}`
-          : row.tipo_incidente;
+        opt.value = row.tipo_evento;
+        opt.textContent = row.descripcion_evento
+          ? `${row.tipo_evento} — ${row.descripcion_evento}`
+          : row.tipo_evento;
         select.appendChild(opt);
       }
     })
@@ -223,8 +223,8 @@ function openIncidentModal() {
     });
 }
 
-async function fetchTipos() {
-  const res = await fetch(apiUrl('/tipo-incidentes?solo_activos=true'));
+async function fetchTiposEventos() {
+  const res = await fetch(apiUrl('/tipo-eventos?solo_activos=true'));
   if (!res.ok) {
     const t = await res.text();
     throw new Error(t || `HTTP ${res.status}`);
@@ -232,27 +232,27 @@ async function fetchTipos() {
   return res.json();
 }
 
-async function submitIncident() {
-  const err = incidentModalEl.querySelector('#incident-error');
+async function submitEvento() {
+  const err = eventoModalEl.querySelector('#evento-error');
   err.hidden = true;
 
-  const select = incidentModalEl.querySelector('#incident-tipo');
+  const select = eventoModalEl.querySelector('#evento-tipo');
   const tipo = select.value?.trim();
-  if (!tipo || !pendingIncidentCoords) {
+  if (!tipo || !pendingEventoCoords) {
     err.hidden = false;
-    err.textContent = 'Selecciona un tipo de incidente.';
+    err.textContent = 'Selecciona un tipo de evento.';
     return;
   }
 
   const body = {
-    tipo_incidente: tipo,
-    latitud: pendingIncidentCoords.lat,
-    longitud: pendingIncidentCoords.lng,
+    tipo_evento: tipo,
+    latitud: pendingEventoCoords.lat,
+    longitud: pendingEventoCoords.lng,
     activo: true,
   };
 
   try {
-    const res = await fetch(apiUrl('/incidentes'), {
+    const res = await fetch(apiUrl('/eventos'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -261,12 +261,12 @@ async function submitIncident() {
     if (!res.ok) {
       throw new Error(formatApiError(data));
     }
-    closeIncidentModal();
+    closeEventoModal();
     interactionMode = 'route';
-    incidentModeBtn.setAttribute('aria-pressed', 'false');
+    eventoModeBtn.setAttribute('aria-pressed', 'false');
     setHintVisible(false);
-    clearIncidentPlacement();
-    alert('Incidente registrado correctamente.');
+    clearEventoPlacement();
+    alert('Evento registrado correctamente.');
   } catch (e) {
     err.hidden = false;
     err.textContent = e.message || 'Error al guardar.';
@@ -279,18 +279,18 @@ function openTipoModal() {
     tipoModalEl.className = 'modal-overlay';
     tipoModalEl.innerHTML = `
       <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tipo-title" tabindex="-1">
-        <h2 id="tipo-title">Nuevo tipo de incidente</h2>
-        <p class="sub">Se guarda en Supabase (tabla TipoIncidentes) vía la API.</p>
+        <h2 id="tipo-title">Nuevo tipo de evento</h2>
+        <p class="sub">Se guarda en Supabase (tabla TipoEventos) via la API.</p>
         <div class="modal-field">
           <label for="tipo-codigo">Código / ID del tipo</label>
           <input id="tipo-codigo" type="text" required maxlength="200" placeholder="ej. incendio_vehicular" autocomplete="off" />
         </div>
         <div class="modal-field">
-          <label for="tipo-desc">Descripción</label>
-          <textarea id="tipo-desc" required placeholder="Descripción del tipo de incidente"></textarea>
+          <label for="tipo-desc">Descripcion</label>
+          <textarea id="tipo-desc" required placeholder="Descripcion del tipo de evento"></textarea>
         </div>
         <div class="modal-field">
-          <label for="tipo-dur">Duración (opcional)</label>
+          <label for="tipo-dur">Duracion (opcional)</label>
           <input id="tipo-dur" type="number" step="1" min="0" placeholder="Opcional — columna duracion en BD" />
         </div>
         <div class="modal-field modal-row-inline">
@@ -324,25 +324,25 @@ async function submitTipo() {
   const err = tipoModalEl.querySelector('#tipo-error');
   err.hidden = true;
 
-  const tipo_incidente = tipoModalEl.querySelector('#tipo-codigo').value.trim();
-  const descripcion_incidente = tipoModalEl.querySelector('#tipo-desc').value.trim();
+  const tipo_evento = tipoModalEl.querySelector('#tipo-codigo').value.trim();
+  const descripcion_evento = tipoModalEl.querySelector('#tipo-desc').value.trim();
   const activo = tipoModalEl.querySelector('#tipo-activo').checked;
   const durRaw = tipoModalEl.querySelector('#tipo-dur').value.trim();
   const duracion = durRaw === '' ? null : Number(durRaw);
 
-  if (!tipo_incidente || !descripcion_incidente) {
+  if (!tipo_evento || !descripcion_evento) {
     err.hidden = false;
     err.textContent = 'Completa código y descripción.';
     return;
   }
 
-  const body = { tipo_incidente, descripcion_incidente, activo };
+  const body = { tipo_evento, descripcion_evento, activo };
   if (duracion !== null && !Number.isNaN(duracion)) {
     body.duracion = duracion;
   }
 
   try {
-    const res = await fetch(apiUrl('/tipo-incidentes'), {
+    const res = await fetch(apiUrl('/tipo-eventos'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -355,7 +355,7 @@ async function submitTipo() {
     tipoModalEl.querySelector('#tipo-codigo').value = '';
     tipoModalEl.querySelector('#tipo-desc').value = '';
     tipoModalEl.querySelector('#tipo-dur').value = '';
-    alert('Tipo de incidente creado.');
+    alert('Tipo de evento creado.');
   } catch (e) {
     err.hidden = false;
     err.textContent = e.message || 'Error al crear el tipo.';

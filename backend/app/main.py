@@ -103,35 +103,41 @@ class RouteResponse(BaseModel):
     trip: Trip
 
 
-class TipoIncidente(BaseModel):
-    tipo_incidente: str
+class TipoEvento(BaseModel):
+    tipo_evento: str
     created_at: Optional[str] = None
-    descripcion_incidente: str
+    descripcion_evento: str
     activo: bool
-    duracion: Optional[int] = None
+    duracion: Optional[float] = None
+    puntuacion: Optional[float] = None
+    radius: Optional[float] = None
+    evento_negativo: Optional[bool] = None
 
 
-class TipoIncidenteCreate(BaseModel):
-    tipo_incidente: str = Field(..., min_length=1, description="Clave primaria del tipo (única)")
-    descripcion_incidente: str = Field(..., min_length=1)
+class TipoEventoCreate(BaseModel):
+    tipo_evento: str = Field(..., min_length=1, description="Clave primaria del tipo (unica)")
+    descripcion_evento: str = Field(..., min_length=1)
     activo: bool = True
-    duracion: Optional[int] = Field(None, description="Duración asociada (columna `duracion` en la BD)")
+    duracion: Optional[float] = Field(None, description="Duracion asociada (columna `duracion` en la BD)")
+    puntuacion: Optional[float] = None
+    radius: Optional[float] = None
+    evento_negativo: Optional[bool] = None
 
 
-class Incidente(BaseModel):
+class Evento(BaseModel):
     id: int
     created_at: Optional[str] = None
-    tipo_incidente: str
+    tipo_evento: str
     activo: bool
     latitud: float
     longitud: float
 
 
-class IncidenteCreate(BaseModel):
-    tipo_incidente: str = Field(
+class EventoCreate(BaseModel):
+    tipo_evento: str = Field(
         ...,
         min_length=1,
-        description="Debe existir en `TipoIncidentes` y estar activo; obtener opciones con GET /tipo-incidentes",
+        description="Debe existir en `TipoEventos` y estar activo; obtener opciones con GET /tipo-eventos",
     )
     latitud: float
     longitud: float
@@ -206,20 +212,20 @@ async def route_proxy(body: RouteRequest):
 
 
 @app.get(
-    "/tipo-incidentes",
-    summary="Listar tipos de incidente",
-    tags=["Incidentes"],
-    response_model=list[TipoIncidente],
+    "/tipo-eventos",
+    summary="Listar tipos de evento",
+    tags=["Eventos"],
+    response_model=list[TipoEvento],
 )
-async def list_tipo_incidentes(
+async def list_tipo_eventos(
     supabase: SupabaseClient,
     solo_activos: bool = True,
 ):
     """
-    Devuelve los registros de `TipoIncidentes` para que el cliente elija un `tipo_incidente`
-    al crear un incidente (por ejemplo, desplegable en el formulario).
+    Devuelve los registros de `TipoEventos` para que el cliente elija un `tipo_evento`
+    al crear un evento (por ejemplo, desplegable en el formulario).
     """
-    q = supabase.table("TipoIncidentes").select("*")
+    q = supabase.table("TipoEventos").select("*")
     if solo_activos:
         q = q.eq("activo", True)
     res = q.execute()
@@ -227,32 +233,32 @@ async def list_tipo_incidentes(
 
 
 @app.post(
-    "/tipo-incidentes",
-    summary="Crear tipo de incidente",
-    tags=["Incidentes"],
-    response_model=TipoIncidente,
+    "/tipo-eventos",
+    summary="Crear tipo de evento",
+    tags=["Eventos"],
+    response_model=TipoEvento,
     status_code=201,
 )
-async def create_tipo_incidente(supabase: SupabaseClient, body: TipoIncidenteCreate):
+async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     payload = body.model_dump(exclude_none=True)
-    res = supabase.table("TipoIncidentes").insert(payload).execute()
+    res = supabase.table("TipoEventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]
 
 
 @app.post(
-    "/incidentes",
-    summary="Crear incidente",
-    tags=["Incidentes"],
-    response_model=Incidente,
+    "/eventos",
+    summary="Crear evento",
+    tags=["Eventos"],
+    response_model=Evento,
     status_code=201,
 )
-async def create_incidente(supabase: SupabaseClient, body: IncidenteCreate):
+async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     check = (
-        supabase.table("TipoIncidentes")
-        .select("tipo_incidente")
-        .eq("tipo_incidente", body.tipo_incidente)
+        supabase.table("TipoEventos")
+        .select("tipo_evento")
+        .eq("tipo_evento", body.tipo_evento)
         .eq("activo", True)
         .limit(1)
         .execute()
@@ -261,12 +267,12 @@ async def create_incidente(supabase: SupabaseClient, body: IncidenteCreate):
         raise HTTPException(
             status_code=400,
             detail=(
-                "El tipo de incidente no existe o está inactivo. "
-                "Use GET /tipo-incidentes para ver los valores permitidos."
+                "El tipo de evento no existe o esta inactivo. "
+                "Use GET /tipo-eventos para ver los valores permitidos."
             ),
         )
     payload = body.model_dump()
-    res = supabase.table("Incidentes").insert(payload).execute()
+    res = supabase.table("eventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]
