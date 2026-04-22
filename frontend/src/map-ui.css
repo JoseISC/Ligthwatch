@@ -85,8 +85,8 @@
   display: none;
 }
 
-/* Marcador evento (pin circular) */
-.evento-marker-dot {
+/* Marcador incidente (pin circular) */
+.incident-marker-dot {
   width: 22px;
   height: 22px;
   background: var(--map-ui-accent);
