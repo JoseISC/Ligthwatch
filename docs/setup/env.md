@@ -132,9 +132,15 @@ Debe retornar los valores configurados.
 ## 📁 Ubicación esperada
 
 ```bash
-Ligthwatch/
-├── app/
+<raíz del repo>/
+├── backend/
 ├── docs/
+│   ├── README.md
+│   ├── backend/
+│   ├── datos/
+│   ├── setup/
+│   ├── proyecto/
+│   └── dependencias/
 ├── .env
 ├── .env.example
 └── README.md

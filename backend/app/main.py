@@ -1,8 +1,12 @@
-from fastapi import FastAPI, HTTPException
+from typing import Annotated, Optional
+
+import httpx
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
-import httpx
+from supabase import Client
+
+from supabase_client import get_supabase
 
 app = FastAPI(
     title="Safe Route API",
@@ -36,6 +40,16 @@ app.add_middleware(
 )
 
 VALHALLA_URL = "http://valhalla:8002"
+
+
+def _supabase_dep() -> Client:
+    try:
+        return get_supabase()
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+
+
+SupabaseClient = Annotated[Client, Depends(_supabase_dep)]
 
 
 # --- Models ---
@@ -87,6 +101,47 @@ class Trip(BaseModel):
 
 class RouteResponse(BaseModel):
     trip: Trip
+
+
+class TipoEvento(BaseModel):
+    tipo_evento: str
+    created_at: Optional[str] = None
+    descripcion_evento: str
+    activo: bool
+    duracion: Optional[float] = None
+    puntuacion: Optional[float] = None
+    radius: Optional[float] = None
+    evento_negativo: Optional[bool] = None
+
+
+class TipoEventoCreate(BaseModel):
+    tipo_evento: str = Field(..., min_length=1, description="Clave primaria del tipo (unica)")
+    descripcion_evento: str = Field(..., min_length=1)
+    activo: bool = True
+    duracion: Optional[float] = Field(None, description="Duracion asociada (columna `duracion` en la BD)")
+    puntuacion: Optional[float] = None
+    radius: Optional[float] = None
+    evento_negativo: Optional[bool] = None
+
+
+class Evento(BaseModel):
+    id: int
+    created_at: Optional[str] = None
+    tipo_evento: str
+    activo: bool
+    latitud: float
+    longitud: float
+
+
+class EventoCreate(BaseModel):
+    tipo_evento: str = Field(
+        ...,
+        min_length=1,
+        description="Debe existir en `TipoEventos` y estar activo; obtener opciones con GET /tipo-eventos",
+    )
+    latitud: float
+    longitud: float
+    activo: bool = True
 
 
 # --- Endpoints ---
@@ -154,3 +209,81 @@ async def route_proxy(body: RouteRequest):
             raise HTTPException(status_code=503, detail=f"Valhalla unreachable: {str(e)}")
 
         return res.json()
+
+
+@app.get(
+    "/tipo-eventos",
+    summary="Listar tipos de evento",
+    tags=["Eventos"],
+    response_model=list[TipoEvento],
+)
+async def list_tipo_eventos(
+    supabase: SupabaseClient,
+    solo_activos: bool = True,
+):
+    """
+    Devuelve los registros de `TipoEventos` para que el cliente elija un `tipo_evento`
+    al crear un evento (por ejemplo, desplegable en el formulario).
+    """
+    q = supabase.table("TipoEventos").select("*")
+    if solo_activos:
+        q = q.eq("activo", True)
+    res = q.execute()
+    return res.data or []
+
+
+@app.post(
+    "/tipo-eventos",
+    summary="Crear tipo de evento",
+    tags=["Eventos"],
+    response_model=TipoEvento,
+    status_code=201,
+)
+async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
+    payload = body.model_dump(exclude_none=True)
+    res = supabase.table("TipoEventos").insert(payload).execute()
+    if not res.data:
+        raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
+    return res.data[0]
+
+
+@app.get(
+    "/eventos",
+    summary="Listar eventos",
+    tags=["Eventos"],
+    response_model=list[Evento],
+)
+async def list_eventos(supabase: SupabaseClient):
+    res = supabase.table("eventos").select("*").eq("activo", True).execute()
+    return res.data or []
+
+
+@app.post(
+    "/eventos",
+    summary="Crear evento",
+    tags=["Eventos"],
+    response_model=Evento,
+    status_code=201,
+)
+async def create_evento(supabase: SupabaseClient, body: EventoCreate):
+    check = (
+        supabase.table("TipoEventos")
+        .select("tipo_evento")
+        .eq("tipo_evento", body.tipo_evento)
+        .eq("activo", True)
+        .limit(1)
+        .execute()
+    )
+    if not check.data:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "El tipo de evento no existe o esta inactivo. "
+                "Use GET /tipo-eventos para ver los valores permitidos."
+            ),
+        )
+    payload = body.model_dump()
+    res = supabase.table("eventos").insert(payload).execute()
+    if not res.data:
+        raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
+    return res.data[0]

@@ -72,3 +72,5 @@ valhalla/data/*
 coverage/
 .cache/
 .tmp/
+
+backend/app/deprecated/*

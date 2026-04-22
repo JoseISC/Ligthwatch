@@ -1,5 +1,7 @@
 # Docker — Configuración de contenedores
 
+Variables de entorno: ver `docs/setup/env.md`.
+
 ## Archivos creados/modificados
 
 | Archivo | Acción |
@@ -8,6 +10,15 @@
 | `frontend/Dockerfile` | Creado |
 | `docker-compose.yml` | Actualizado |
 | `backend/app/main.py` | Corregida URL interna de Valhalla |
+| `frontend/vite.config.js` | Proxy `/api` → backend (solo `npm run dev`, no Nginx) |
+
+---
+
+## Desarrollo frontend con Vite (sin Docker)
+
+En local, `frontend/vite.config.js` define un **proxy**: las peticiones del navegador a `/api/...` se reenvían a `http://127.0.0.1:8000/...`, de modo que el JS puede usar el mismo origen que el dev server. Detalle en `docs/frontend/main.md`.
+
+La imagen **Nginx** del contenedor `frontend` solo sirve estáticos: **no** incluye ese proxy. Para el build en contenedor, suele usarse `VITE_API_URL` al compilar o el fallback a `http://localhost:8000` si el usuario abre el navegador en la misma máquina que el backend.
 
 ---
 
