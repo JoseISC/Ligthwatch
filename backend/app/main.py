@@ -241,6 +241,17 @@ async def create_tipo_incidente(supabase: SupabaseClient, body: TipoIncidenteCre
     return res.data[0]
 
 
+@app.get(
+    "/incidentes",
+    summary="Listar incidentes",
+    tags=["Incidentes"],
+    response_model=list[Incidente],
+)
+async def list_incidentes(supabase: SupabaseClient):
+    res = supabase.table("Incidentes").select("*").eq("activo", True).execute()
+    return res.data
+
+
 @app.post(
     "/incidentes",
     summary="Crear incidente",
