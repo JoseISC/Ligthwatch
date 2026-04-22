@@ -99,12 +99,45 @@
 .incident-popup {
   font-family: var(--map-ui-font);
   font-size: 13px;
-  color: #333;
-  line-height: 1.4;
+  color: #1f2937;
+  line-height: 1.45;
+  min-width: 180px;
 }
 
-.incident-popup strong {
+.incident-popup p {
+  margin: 0;
+}
+
+.incident-popup__tipo {
   font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.incident-popup__desc {
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  word-break: break-word;
+}
+
+.incident-popup__fecha {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.incident-popup__label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  color: #9ca3af;
 }
 
 .maplibregl-popup-content {

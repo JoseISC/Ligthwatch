@@ -12,6 +12,24 @@ function apiUrl(path) {
   return `http://localhost:8000${p}`;
 }
 
+/** Formatea una cadena ISO de fecha/hora en formato local legible, con fallback. */
+function formatFecha(isoString) {
+  if (!isoString) return 'Sin fecha';
+  try {
+    const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return 'Fecha inválida';
+    return d.toLocaleString('es-CL', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return 'Fecha inválida';
+  }
+}
+
 /** Mensaje legible desde respuestas FastAPI (`detail` string o lista de validación). */
 function formatApiError(data) {
   if (data == null) return 'Error desconocido';
@@ -111,11 +129,17 @@ function addEventoMarker(evento) {
   el.style.background = '#dc2626';
   el.setAttribute('title', evento.tipo_evento);
 
-  const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+  const descripcion = evento.descripcion?.trim() || 'Sin descripción';
+  const fecha = formatFecha(evento.created_at);
+
+  const popup = new maplibregl.Popup({ offset: 25, maxWidth: '260px' }).setHTML(`
     <div class="incident-popup">
-      <strong>${evento.tipo_evento}</strong><br/>
-      <span>Lat: ${evento.latitud?.toFixed(6)}</span><br/>
-      <span>Lon: ${evento.longitud?.toFixed(6)}</span>
+      <p class="incident-popup__tipo">${evento.tipo_evento}</p>
+      <p class="incident-popup__desc">${descripcion}</p>
+      <p class="incident-popup__fecha">
+        <span class="incident-popup__label">Fecha y hora</span>
+        ${fecha}
+      </p>
     </div>
   `);
 
@@ -187,6 +211,10 @@ function openEventoModal() {
         <div class="modal-field">
           <label for="evento-tipo">Tipo de evento</label>
           <select id="evento-tipo" required></select>
+        </div>
+        <div class="modal-field">
+          <label for="evento-desc">Descripción</label>
+          <textarea id="evento-desc" placeholder="Describe brevemente el evento observado…"></textarea>
         </div>
         <div class="modal-field">
           <label>Ubicación</label>
@@ -282,8 +310,11 @@ async function submitEvento() {
     return;
   }
 
+  const descripcionRaw = eventoModalEl.querySelector('#evento-desc').value.trim();
+
   const body = {
     tipo_evento: tipo,
+    descripcion: descripcionRaw || null,
     latitud: pendingEventoCoords.lat,
     longitud: pendingEventoCoords.lng,
     activo: true,
@@ -300,6 +331,7 @@ async function submitEvento() {
       throw new Error(formatApiError(data));
     }
     addEventoMarker(data);
+    eventoModalEl.querySelector('#evento-desc').value = '';
     closeEventoModal();
     interactionMode = 'route';
     eventoModeBtn.setAttribute('aria-pressed', 'false');

@@ -128,6 +128,7 @@ class Evento(BaseModel):
     id: int
     created_at: Optional[str] = None
     tipo_evento: str
+    descripcion: Optional[str] = None
     activo: bool
     latitud: float
     longitud: float
@@ -139,6 +140,7 @@ class EventoCreate(BaseModel):
         min_length=1,
         description="Debe existir en `TipoEventos` y estar activo; obtener opciones con GET /tipo-eventos",
     )
+    descripcion: Optional[str] = Field(None, description="Descripción del evento observado")
     latitud: float
     longitud: float
     activo: bool = True
