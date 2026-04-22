@@ -36,8 +36,13 @@ const map = new maplibregl.Map({
 
 map.addControl(new maplibregl.NavigationControl());
 
+map.on('load', () => {
+  loadIncidents();
+});
+
 let routeMarkers = [];
 let routePoints = [];
+let incidentMarkers = [];
 
 /** @type {'route' | 'incident'} */
 let interactionMode = 'route';
@@ -87,6 +92,39 @@ function setIncidentMarker(lng, lat) {
   el.className = 'incident-marker-dot';
   el.setAttribute('title', 'Ubicación del incidente');
   incidentMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+}
+
+async function loadIncidents() {
+  try {
+    const res = await fetch(apiUrl('/incidentes'));
+    if (!res.ok) return;
+    const incidents = await res.json();
+    incidents.forEach(addIncidentMarker);
+  } catch (e) {
+    console.error('Error loading incidents:', e);
+  }
+}
+
+function addIncidentMarker(incident) {
+  const el = document.createElement('div');
+  el.className = 'incident-marker-dot';
+  el.style.background = '#dc2626';
+  el.setAttribute('title', incident.tipo_incidente);
+
+  const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
+    <div class="incident-popup">
+      <strong>${incident.tipo_incidente}</strong><br/>
+      <span>Lat: ${incident.latitud?.toFixed(6)}</span><br/>
+      <span>Lon: ${incident.longitud?.toFixed(6)}</span>
+    </div>
+  `);
+
+  const marker = new maplibregl.Marker({ element: el })
+    .setLngLat([incident.longitud, incident.latitud])
+    .setPopup(popup)
+    .addTo(map);
+
+  incidentMarkers.push(marker);
 }
 
 function toggleIncidentMode() {
@@ -261,6 +299,7 @@ async function submitIncident() {
     if (!res.ok) {
       throw new Error(formatApiError(data));
     }
+    addIncidentMarker(data);
     closeIncidentModal();
     interactionMode = 'route';
     incidentModeBtn.setAttribute('aria-pressed', 'false');

@@ -93,6 +93,30 @@
   border: 3px solid #fff;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+<<<<<<< HEAD
+=======
+  cursor: pointer;
+}
+
+.incident-popup {
+  font-family: var(--map-ui-font);
+  font-size: 13px;
+  color: #333;
+  line-height: 1.4;
+}
+
+.incident-popup strong {
+  font-size: 14px;
+}
+
+.maplibregl-popup-content {
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.maplibregl-popup-tip {
+  display: none;
+>>>>>>> origin/victor
 }
 
 .modal-overlay {
