@@ -37,12 +37,12 @@ const map = new maplibregl.Map({
 map.addControl(new maplibregl.NavigationControl());
 
 map.on('load', () => {
-  loadIncidents();
+  loadEventos();
 });
 
 let routeMarkers = [];
 let routePoints = [];
-let incidentMarkers = [];
+let eventoMarkers = [];
 
 /** @type {'route' | 'evento'} */
 let interactionMode = 'route';
@@ -94,37 +94,37 @@ function setEventoMarker(lng, lat) {
   eventoMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
 }
 
-async function loadIncidents() {
+async function loadEventos() {
   try {
-    const res = await fetch(apiUrl('/incidentes'));
+    const res = await fetch(apiUrl('/eventos'));
     if (!res.ok) return;
-    const incidents = await res.json();
-    incidents.forEach(addIncidentMarker);
+    const eventos = await res.json();
+    eventos.forEach(addEventoMarker);
   } catch (e) {
-    console.error('Error loading incidents:', e);
+    console.error('Error loading eventos:', e);
   }
 }
 
-function addIncidentMarker(incident) {
+function addEventoMarker(evento) {
   const el = document.createElement('div');
-  el.className = 'incident-marker-dot';
+  el.className = 'evento-marker-dot';
   el.style.background = '#dc2626';
-  el.setAttribute('title', incident.tipo_incidente);
+  el.setAttribute('title', evento.tipo_evento);
 
   const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
     <div class="incident-popup">
-      <strong>${incident.tipo_incidente}</strong><br/>
-      <span>Lat: ${incident.latitud?.toFixed(6)}</span><br/>
-      <span>Lon: ${incident.longitud?.toFixed(6)}</span>
+      <strong>${evento.tipo_evento}</strong><br/>
+      <span>Lat: ${evento.latitud?.toFixed(6)}</span><br/>
+      <span>Lon: ${evento.longitud?.toFixed(6)}</span>
     </div>
   `);
 
   const marker = new maplibregl.Marker({ element: el })
-    .setLngLat([incident.longitud, incident.latitud])
+    .setLngLat([evento.longitud, evento.latitud])
     .setPopup(popup)
     .addTo(map);
 
-  incidentMarkers.push(marker);
+  eventoMarkers.push(marker);
 }
 
 function toggleEventoMode() {
@@ -299,7 +299,7 @@ async function submitEvento() {
     if (!res.ok) {
       throw new Error(formatApiError(data));
     }
-    addIncidentMarker(data);
+    addEventoMarker(data);
     closeEventoModal();
     interactionMode = 'route';
     eventoModeBtn.setAttribute('aria-pressed', 'false');

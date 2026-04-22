@@ -248,14 +248,14 @@ async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
 
 
 @app.get(
-    "/incidentes",
-    summary="Listar incidentes",
-    tags=["Incidentes"],
-    response_model=list[Incidente],
+    "/eventos",
+    summary="Listar eventos",
+    tags=["Eventos"],
+    response_model=list[Evento],
 )
-async def list_incidentes(supabase: SupabaseClient):
-    res = supabase.table("Incidentes").select("*").eq("activo", True).execute()
-    return res.data
+async def list_eventos(supabase: SupabaseClient):
+    res = supabase.table("eventos").select("*").eq("activo", True).execute()
+    return res.data or []
 
 
 @app.post(
