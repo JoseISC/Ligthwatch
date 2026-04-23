@@ -129,7 +129,7 @@ function addEventoMarker(evento) {
   el.style.background = '#dc2626';
   el.setAttribute('title', evento.tipo_evento);
 
-  const descripcion = evento.descripcion?.trim() || 'Sin descripción';
+  const descripcion = evento.descripcion?.trim() || evento.descripcion_evento?.trim() || 'Sin descripción';
   const fecha = formatFecha(evento.created_at);
 
   const popup = new maplibregl.Popup({ offset: 25, maxWidth: '260px' }).setHTML(`
@@ -211,10 +211,6 @@ function openEventoModal() {
         <div class="modal-field">
           <label for="evento-tipo">Tipo de evento</label>
           <select id="evento-tipo" required></select>
-        </div>
-        <div class="modal-field">
-          <label for="evento-desc">Descripción</label>
-          <textarea id="evento-desc" placeholder="Describe brevemente el evento observado…"></textarea>
         </div>
         <div class="modal-field">
           <label>Ubicación</label>
@@ -310,11 +306,8 @@ async function submitEvento() {
     return;
   }
 
-  const descripcionRaw = eventoModalEl.querySelector('#evento-desc').value.trim();
-
   const body = {
     tipo_evento: tipo,
-    descripcion: descripcionRaw || null,
     latitud: pendingEventoCoords.lat,
     longitud: pendingEventoCoords.lng,
     activo: true,
@@ -331,7 +324,6 @@ async function submitEvento() {
       throw new Error(formatApiError(data));
     }
     addEventoMarker(data);
-    eventoModalEl.querySelector('#evento-desc').value = '';
     closeEventoModal();
     interactionMode = 'route';
     eventoModeBtn.setAttribute('aria-pressed', 'false');
