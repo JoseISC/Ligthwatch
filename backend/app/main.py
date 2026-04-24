@@ -85,6 +85,11 @@ class RouteRequest(BaseModel):
         description="Fine-tuning options per costing model",
         example={"pedestrian": {"shortest": True}}
     )
+    exclude_polygons: Optional[list[list[list[float]]]] = Field(
+        None,
+        description="Polygons to exclude from routing (Valhalla exclude_polygons parameter)",
+        example=[[[-70.65, -33.46], [-70.64, -33.46], [-70.64, -33.45], [-70.65, -33.45], [-70.65, -33.46]]]
+    )
 
 class HealthResponse(BaseModel):
     status: str
@@ -140,7 +145,6 @@ class EventoCreate(BaseModel):
         min_length=1,
         description="Debe existir en `TipoEventos` y estar activo; obtener opciones con GET /tipo-eventos",
     )
-    descripcion: Optional[str] = Field(None, description="Descripción del evento observado")
     latitud: float
     longitud: float
     activo: bool = True
@@ -256,8 +260,18 @@ async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     response_model=list[Evento],
 )
 async def list_eventos(supabase: SupabaseClient):
-    res = supabase.table("eventos").select("*").eq("activo", True).execute()
-    return res.data or []
+    res = (
+        supabase.table("eventos")
+        .select("*, TipoEventos(tipo_evento, descripcion_evento)")
+        .eq("activo", True)
+        .execute()
+    )
+    eventos = []
+    for row in res.data or []:
+        tipo = row.pop("TipoEventos", {})
+        row["descripcion"] = tipo.get("descripcion_evento") if tipo else None
+        eventos.append(row)
+    return eventos
 
 
 @app.post(
