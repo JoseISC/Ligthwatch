@@ -85,6 +85,11 @@ class RouteRequest(BaseModel):
         description="Fine-tuning options per costing model",
         example={"pedestrian": {"shortest": True}}
     )
+    exclude_polygons: Optional[list[list[list[float]]]] = Field(
+        None,
+        description="Polygons to exclude from routing (Valhalla exclude_polygons parameter)",
+        example=[[[-70.65, -33.46], [-70.64, -33.46], [-70.64, -33.45], [-70.65, -33.45], [-70.65, -33.46]]]
+    )
 
 class HealthResponse(BaseModel):
     status: str

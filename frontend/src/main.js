@@ -433,11 +433,17 @@ async function getRoute() {
     return;
   }
 
+  const excludePolygons = await buildExcludePolygons();
+
   const body = {
     locations: routePoints,
     costing: 'pedestrian',
     costing_options: { pedestrian: { shortest: true } },
   };
+
+  if (excludePolygons.length > 0) {
+    body.exclude_polygons = excludePolygons;
+  }
 
   const res = await fetch(apiUrl('/route'), {
     method: 'POST',
@@ -451,6 +457,40 @@ async function getRoute() {
     return;
   }
   drawRoute(data);
+}
+
+async function buildExcludePolygons() {
+  try {
+    const res = await fetch(apiUrl('/eventos'));
+    if (!res.ok) return [];
+    const eventos = await res.json();
+
+    if (eventos.length === 0) return [];
+
+    const polygons = [];
+    for (const evento of eventos) {
+      const radius = evento.radius || 0.0001;
+      const [lng, lat] = [evento.longitud, evento.latitud];
+      const polygon = circlePolygon(lng, lat, radius, 16);
+      polygons.push(polygon);
+    }
+    return polygons;
+  } catch (e) {
+    console.error('Error building exclude polygons:', e);
+    return [];
+  }
+}
+
+function circlePolygon(centerLng, centerLat, radiusInDegrees, numPoints) {
+  const coords = [];
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * 2 * Math.PI;
+    const lng = centerLng + radiusInDegrees * Math.cos(angle);
+    const lat = centerLat + radiusInDegrees * Math.sin(angle);
+    coords.push([lng, lat]);
+  }
+  coords.push(coords[0]);
+  return coords;
 }
 
 function drawRoute(data) {
