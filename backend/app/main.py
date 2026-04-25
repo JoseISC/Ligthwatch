@@ -137,6 +137,7 @@ class Evento(BaseModel):
     activo: bool
     latitud: float
     longitud: float
+    evento_negativo: Optional[bool] = None
 
 
 class EventoCreate(BaseModel):
@@ -260,17 +261,17 @@ async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     response_model=list[Evento],
 )
 async def list_eventos(supabase: SupabaseClient):
-    res = (
-        supabase.table("eventos")
-        .select("*, TipoEventos(tipo_evento, descripcion_evento)")
-        .eq("activo", True)
-        .execute()
-    )
-    eventos = []
-    for row in res.data or []:
-        tipo = row.pop("TipoEventos", {})
-        row["descripcion"] = tipo.get("descripcion_evento") if tipo else None
-        eventos.append(row)
+    res = supabase.table("eventos").select("*").eq("activo", True).execute()
+    eventos = res.data or []
+    
+    tipos_res = supabase.table("TipoEventos").select("tipo_evento, evento_negativo").execute()
+    tipos_map = {t["tipo_evento"]: t.get("evento_negativo") for t in tipos_res.data or []}
+    
+    for row in eventos:
+        tipo = row.get("tipo_evento")
+        if tipo in tipos_map:
+            row["evento_negativo"] = tipos_map[tipo]
+        
     return eventos
 
 
