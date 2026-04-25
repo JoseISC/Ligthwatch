@@ -304,3 +304,29 @@ async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]
+
+
+@app.delete(
+    "/eventos/{evento_id}",
+    summary="Eliminar evento (soft delete: marca activo=false)",
+    tags=["Eventos"],
+    status_code=204,
+)
+async def delete_evento(supabase: SupabaseClient, evento_id: int):
+    """
+    Marca el evento como inactivo (`activo=false`). Como `GET /eventos` filtra por
+    `activo=true`, el evento ya no aparece en el mapa pero se conserva en la BD
+    para auditoría.
+    """
+    existing = (
+        supabase.table("eventos")
+        .select("id")
+        .eq("id", evento_id)
+        .limit(1)
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail=f"Evento {evento_id} no encontrado")
+
+    supabase.table("eventos").update({"activo": False}).eq("id", evento_id).execute()
+    return None
