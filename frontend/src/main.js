@@ -126,7 +126,8 @@ async function loadEventos() {
 function addEventoMarker(evento) {
   const el = document.createElement('div');
   el.className = 'evento-marker-dot';
-  el.style.background = '#dc2626';
+  const isNegativo = evento.evento_negativo === true || evento.evento_negativo === 'true';
+  el.style.background = isNegativo ? '#dc2626' : '#22c55e';
   el.setAttribute('title', evento.tipo_evento);
 
   const descripcion = evento.descripcion?.trim() || evento.descripcion_evento?.trim() || 'Sin descripción';
@@ -469,6 +470,8 @@ async function buildExcludePolygons() {
 
     const polygons = [];
     for (const evento of eventos) {
+      const isNegativo = evento.evento_negativo === true || evento.evento_negativo === 'true';
+      if (!isNegativo) continue;
       const radius = evento.radius || 0.0001;
       const [lng, lat] = [evento.longitud, evento.latitud];
       const polygon = circlePolygon(lng, lat, radius, 16);
