@@ -150,6 +150,51 @@ function addEventoMarker(evento) {
     .addTo(map);
 
   eventoMarkers.push(marker);
+
+const radius = evento.radius || 10;
+  const puntuacion = evento.puntuacion ?? 1;
+  const opacity = Math.min(Math.max(puntuacion / 10, 0.1), 0.5);
+  const circleColor = isNegativo ? '#dc2626' : '#22c55e';
+
+  const circleGeoJSON = {
+    type: 'Feature',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [circleCoords(evento.longitud, evento.latitud, radius, 32)],
+    },
+  };
+
+  const sourceId = `evento-circle-${evento.id}`;
+  if (!map.getSource(sourceId)) {
+    map.addSource(sourceId, { type: 'geojson', data: circleGeoJSON });
+  }
+  if (!map.getLayer(sourceId)) {
+    map.addLayer({
+      id: sourceId,
+      type: 'fill',
+      source: sourceId,
+      paint: {
+        'fill-color': circleColor,
+        'fill-opacity': opacity,
+      },
+    });
+  }
+}
+
+function circleCoords(centerLng, centerLat, radiusInMeters, numPoints) {
+  const metersPerDegreeLat = 111320;
+  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
+  const radiusLng = radiusInMeters / metersPerDegreeLng;
+  const radiusLat = radiusInMeters / metersPerDegreeLat;
+  const coords = [];
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * 2 * Math.PI;
+    const lng = centerLng + radiusLng * Math.cos(angle);
+    const lat = centerLat + radiusLat * Math.sin(angle);
+    coords.push([lng, lat]);
+  }
+  coords.push(coords[0]);
+  return coords;
 }
 
 function toggleEventoMode() {
@@ -472,9 +517,9 @@ async function buildExcludePolygons() {
     for (const evento of eventos) {
       const isNegativo = evento.evento_negativo === true || evento.evento_negativo === 'true';
       if (!isNegativo) continue;
-      const radius = evento.radius || 0.0001;
+      const radius = evento.radius || 50;
       const [lng, lat] = [evento.longitud, evento.latitud];
-      const polygon = circlePolygon(lng, lat, radius, 16);
+      const polygon = circlePolygon(lng, lat, radius, 8);
       polygons.push(polygon);
     }
     return polygons;
@@ -484,12 +529,16 @@ async function buildExcludePolygons() {
   }
 }
 
-function circlePolygon(centerLng, centerLat, radiusInDegrees, numPoints) {
+function circlePolygon(centerLng, centerLat, radiusInMeters, numPoints) {
+  const metersPerDegreeLat = 111320;
+  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
+  const radiusLng = radiusInMeters / metersPerDegreeLng;
+  const radiusLat = radiusInMeters / metersPerDegreeLat;
   const coords = [];
   for (let i = 0; i < numPoints; i++) {
     const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusInDegrees * Math.cos(angle);
-    const lat = centerLat + radiusInDegrees * Math.sin(angle);
+    const lng = centerLng + radiusLng * Math.cos(angle);
+    const lat = centerLat + radiusLat * Math.sin(angle);
     coords.push([lng, lat]);
   }
   coords.push(coords[0]);
