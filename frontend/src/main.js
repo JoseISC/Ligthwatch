@@ -62,8 +62,8 @@ let routeMarkers = [];
 let routePoints = [];
 let eventoMarkers = [];
 
-/** @type {'route' | 'evento'} */
-let interactionMode = 'route';
+/** @type {'idle' | 'route' | 'evento'} */
+let interactionMode = 'idle';
 /** @type {maplibregl.Marker | null} */
 let eventoMarker = null;
 /** @type {{ lng: number; lat: number } | null} */
@@ -75,7 +75,7 @@ const newTipoBtn = document.getElementById('newTipoBtn');
 const modeHint = document.getElementById('modeHint');
 const modalRoot = document.getElementById('modalRoot');
 
-routeBtn.addEventListener('click', getRoute);
+routeBtn.addEventListener('click', toggleRouteMode);
 eventoModeBtn.addEventListener('click', toggleEventoMode);
 newTipoBtn.addEventListener('click', () => openTipoModal());
 
@@ -89,17 +89,68 @@ map.on('click', (e) => {
     return;
   }
 
-  if (routePoints.length === 2) {
-    routeMarkers.forEach((m) => m.remove());
-    routeMarkers = [];
-    routePoints = [];
+  if (interactionMode === 'route') {
+    if (routePoints.length === 2) {
+      routeMarkers.forEach((m) => m.remove());
+      routeMarkers = [];
+      routePoints = [];
+    }
+
+    routePoints.push({ lon: lng, lat });
+
+    const marker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
+    routeMarkers.push(marker);
+
+    updateRouteHint();
+  }
+});
+
+// --- Modo Ruta ---
+
+function toggleRouteMode() {
+  if (interactionMode === 'route') {
+    clearRouteMode();
+    return;
   }
 
-  routePoints.push({ lon: lng, lat });
+  if (interactionMode === 'evento') {
+    clearEventoPlacement();
+    eventoModeBtn.setAttribute('aria-pressed', 'false');
+  }
 
-  const marker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
-  routeMarkers.push(marker);
-});
+  interactionMode = 'route';
+  routeBtn.setAttribute('aria-pressed', 'true');
+  updateRouteHint();
+}
+
+function clearRouteMode() {
+  routeMarkers.forEach((m) => m.remove());
+  routeMarkers = [];
+  routePoints = [];
+  clearRouteLine();
+  interactionMode = 'idle';
+  routeBtn.setAttribute('aria-pressed', 'false');
+  setHintVisible(false);
+}
+
+function updateRouteHint() {
+  if (interactionMode !== 'route') return;
+
+  if (routePoints.length === 0) {
+    setHintVisible(true, 'Modo Ruta: haz clic en el mapa para añadir el punto de origen.', false);
+  } else if (routePoints.length === 1) {
+    setHintVisible(true, 'Ahora haz clic para añadir el punto de destino.', false);
+  } else {
+    setHintVisible(true, 'Puntos listos.', true);
+  }
+}
+
+function clearRouteLine() {
+  if (map.getSource('route')) {
+    map.removeLayer('route');
+    map.removeSource('route');
+  }
+}
 
 function setEventoMarker(lng, lat) {
   if (eventoMarker) {
@@ -115,38 +166,39 @@ function setEventoMarker(lng, lat) {
 async function loadEventos() {
   try {
     const res = await fetch(apiUrl('/eventos'));
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn('GET /eventos respondió', res.status);
+      return;
+    }
     const eventos = await res.json();
-    eventos.forEach(addEventoMarker);
+    console.log(`Cargando ${eventos.length} eventos`);
+    eventos.forEach((evento) => addEventoMarker(evento));
   } catch (e) {
     console.error('Error loading eventos:', e);
   }
 }
 
 function addEventoMarker(evento) {
+  const lng = Number(evento.longitud);
+  const lat = Number(evento.latitud);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) {
+    console.warn('Evento descartado por coordenadas inválidas:', evento);
+    return;
+  }
+
   const el = document.createElement('div');
   el.className = 'evento-marker-dot';
   const isNegativo = evento.evento_negativo === true || evento.evento_negativo === 'true';
   el.style.background = isNegativo ? '#dc2626' : '#22c55e';
-  el.setAttribute('title', evento.tipo_evento);
+  el.setAttribute('title', evento.tipo_evento || 'Evento');
 
-  const descripcion = evento.descripcion?.trim() || evento.descripcion_evento?.trim() || 'Sin descripción';
-  const fecha = formatFecha(evento.created_at);
-
-  const popup = new maplibregl.Popup({ offset: 25, maxWidth: '260px' }).setHTML(`
-    <div class="incident-popup">
-      <p class="incident-popup__tipo">${evento.tipo_evento}</p>
-      <p class="incident-popup__desc">${descripcion}</p>
-      <p class="incident-popup__fecha">
-        <span class="incident-popup__label">Fecha y hora</span>
-        ${fecha}
-      </p>
-    </div>
-  `);
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openDetalleModal(evento, marker);
+  });
 
   const marker = new maplibregl.Marker({ element: el })
-    .setLngLat([evento.longitud, evento.latitud])
-    .setPopup(popup)
+    .setLngLat([lng, lat])
     .addTo(map);
 
   eventoMarkers.push(marker);
@@ -197,21 +249,125 @@ function circleCoords(centerLng, centerLat, radiusInMeters, numPoints) {
   return coords;
 }
 
-function toggleEventoMode() {
-  const next = interactionMode === 'evento' ? 'route' : 'evento';
-  interactionMode = next;
-  eventoModeBtn.setAttribute('aria-pressed', next === 'evento' ? 'true' : 'false');
+// --- Modal Detalles Evento ---
 
-  if (next === 'route') {
-    clearEventoPlacement();
-    modeHint.classList.add('map-hint--hidden');
-    modeHint.textContent = '';
+let detalleModalEl = null;
+let detalleDeleteBtn = null;
+let detalleCleanup = null;
+
+function openDetalleModal(evento, marker) {
+  if (!detalleModalEl) {
+    detalleModalEl = document.createElement('div');
+    detalleModalEl.className = 'modal-overlay';
+    detalleModalEl.setAttribute('role', 'presentation');
+    detalleModalEl.innerHTML = `
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="detalle-title" tabindex="-1">
+        <h2 id="detalle-title">Detalles del Evento</h2>
+        <div class="modal-field">
+          <label>Tipo</label>
+          <p id="detalle-tipo" class="modal-value"></p>
+        </div>
+        <div class="modal-field">
+          <label>Descripción</label>
+          <p id="detalle-desc" class="modal-value"></p>
+        </div>
+        <div class="modal-field">
+          <label>Fecha y hora</label>
+          <p id="detalle-fecha" class="modal-value"></p>
+        </div>
+        <div class="modal-field">
+          <label>Ubicación</label>
+          <p id="detalle-coords" class="modal-value"></p>
+        </div>
+        <div class="modal-error" id="detalle-error" hidden></div>
+        <div class="modal-actions">
+          <button type="button" id="detalle-cancel">Cerrar</button>
+          <button type="button" id="detalle-delete" class="modal-btn--danger">Eliminar evento</button>
+        </div>
+      </div>
+    `;
+    modalRoot.appendChild(detalleModalEl);
+
+    detalleModalEl.querySelector('#detalle-cancel').addEventListener('click', closeDetalleModal);
+    detalleModalEl.addEventListener('click', (ev) => {
+      if (ev.target === detalleModalEl) closeDetalleModal();
+    });
+
+    detalleDeleteBtn = detalleModalEl.querySelector('#detalle-delete');
+  }
+
+  const descripcion = evento.descripcion?.trim() || evento.descripcion_evento?.trim() || 'Sin descripción';
+
+  detalleModalEl.querySelector('#detalle-tipo').textContent = evento.tipo_evento || 'Sin tipo';
+  detalleModalEl.querySelector('#detalle-desc').textContent = descripcion;
+  detalleModalEl.querySelector('#detalle-fecha').textContent = formatFecha(evento.created_at);
+  detalleModalEl.querySelector('#detalle-coords').textContent =
+    `${Number(evento.latitud).toFixed(6)}, ${Number(evento.longitud).toFixed(6)}`;
+  detalleModalEl.querySelector('#detalle-error').hidden = true;
+
+  if (detalleCleanup) detalleCleanup();
+  const handleDelete = () => deleteEvento(evento.id ?? evento.evento_id, marker);
+  detalleDeleteBtn.addEventListener('click', handleDelete);
+  detalleCleanup = () => detalleDeleteBtn.removeEventListener('click', handleDelete);
+
+  detalleModalEl.hidden = false;
+  detalleModalEl.querySelector('.modal-panel').focus();
+}
+
+function closeDetalleModal() {
+  if (detalleModalEl) detalleModalEl.hidden = true;
+  if (detalleCleanup) {
+    detalleCleanup();
+    detalleCleanup = null;
+  }
+}
+
+async function deleteEvento(id, marker) {
+  const err = detalleModalEl.querySelector('#detalle-error');
+  err.hidden = true;
+
+  if (!id) {
+    err.hidden = false;
+    err.textContent = 'No se puede eliminar: el evento no tiene ID.';
     return;
   }
 
-  modeHint.textContent =
-    'Modo Evento: haz clic en el mapa para colocar el marcador. Luego elige el tipo de evento.';
-  modeHint.classList.remove('map-hint--hidden');
+  try {
+    const res = await fetch(apiUrl(`/eventos/${id}`), { method: 'DELETE' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(formatApiError(data));
+    }
+    marker.remove();
+    eventoMarkers = eventoMarkers.filter((m) => m !== marker);
+    closeDetalleModal();
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = e.message || 'Error al eliminar el evento.';
+  }
+}
+
+function toggleEventoMode() {
+  const next = interactionMode === 'evento' ? 'idle' : 'evento';
+
+  if (next === 'evento' && interactionMode === 'route') {
+    clearRouteMode();
+  }
+
+  interactionMode = next;
+  eventoModeBtn.setAttribute('aria-pressed', next === 'evento' ? 'true' : 'false');
+
+  if (next === 'idle') {
+    clearEventoPlacement();
+    setHintVisible(false);
+    return;
+  }
+
+  setHintVisible(
+    true,
+    'Modo Evento: haz clic en el mapa para colocar el marcador. Luego elige el tipo de evento.',
+    false,
+  );
 }
 
 function clearEventoPlacement() {
@@ -223,13 +379,26 @@ function clearEventoPlacement() {
   closeEventoModal();
 }
 
-function setHintVisible(show, text) {
-  if (show) {
-    modeHint.textContent = text;
-    modeHint.classList.remove('map-hint--hidden');
-  } else {
+/**
+ * @param {boolean} show
+ * @param {string} text
+ * @param {boolean} showCalcBtn — muestra el botón "Calcular ruta" dentro del hint
+ */
+function setHintVisible(show, text = '', showCalcBtn = false) {
+  if (!show) {
     modeHint.classList.add('map-hint--hidden');
+    modeHint.innerHTML = '';
+    return;
   }
+
+  if (showCalcBtn) {
+    modeHint.innerHTML = `<span>${text}</span><button type="button" id="calcRouteBtn" class="map-hint__btn">Calcular ruta</button>`;
+    modeHint.querySelector('#calcRouteBtn').addEventListener('click', getRoute);
+  } else {
+    modeHint.textContent = text;
+  }
+
+  modeHint.classList.remove('map-hint--hidden');
 }
 
 // --- Modales ---
@@ -371,7 +540,7 @@ async function submitEvento() {
     }
     addEventoMarker(data);
     closeEventoModal();
-    interactionMode = 'route';
+    interactionMode = 'idle';
     eventoModeBtn.setAttribute('aria-pressed', 'false');
     setHintVisible(false);
     clearEventoPlacement();
@@ -558,10 +727,7 @@ function drawRoute(data) {
   };
 
   function addRouteLayer() {
-    if (map.getSource('route')) {
-      map.removeLayer('route');
-      map.removeSource('route');
-    }
+    clearRouteLine();
 
     map.addSource('route', { type: 'geojson', data: geojson });
 
