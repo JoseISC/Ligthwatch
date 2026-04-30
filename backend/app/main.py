@@ -307,7 +307,14 @@ async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     res = supabase.table("eventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
-    return res.data[0]
+    tipo_res = supabase.table("TipoEventos").select("evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
+    tipo_data = tipo_res.data[0] if tipo_res.data else {}
+    
+    result = res.data[0]
+    result["evento_negativo"] = tipo_data.get("evento_negativo")
+    result["puntuacion"] = tipo_data.get("puntuacion")
+    result["radius"] = tipo_data.get("radius")
+    return result
 
 
 @app.delete(

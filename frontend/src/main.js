@@ -2,48 +2,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import polyline from '@mapbox/polyline';
 import './map-ui.css';
-
-/** Base URL del backend (ver README: VITE_API_URL en build; en dev se usa proxy /api). */
-function apiUrl(path) {
-  const p = path.startsWith('/') ? path : `/${path}`;
-  const fromEnv = import.meta.env.VITE_API_URL?.replace(/\/$/, '');
-  if (fromEnv) return `${fromEnv}${p}`;
-  if (import.meta.env.DEV) return `/api${p}`;
-  return `http://localhost:8000${p}`;
-}
-
-/** Formatea una cadena ISO de fecha/hora en formato local legible, con fallback. */
-function formatFecha(isoString) {
-  if (!isoString) return 'Sin fecha';
-  try {
-    const d = new Date(isoString);
-    if (Number.isNaN(d.getTime())) return 'Fecha inválida';
-    return d.toLocaleString('es-CL', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return 'Fecha inválida';
-  }
-}
-
-/** Mensaje legible desde respuestas FastAPI (`detail` string o lista de validación). */
-function formatApiError(data) {
-  if (data == null) return 'Error desconocido';
-  if (typeof data.detail === 'string') return data.detail;
-  if (Array.isArray(data.detail)) {
-    return data.detail.map((x) => (typeof x === 'object' && x.msg ? x.msg : String(x))).join('; ');
-  }
-  if (typeof data.message === 'string') return data.message;
-  try {
-    return JSON.stringify(data);
-  } catch {
-    return 'Error desconocido';
-  }
-}
+import { apiUrl, formatFecha, formatApiError } from './utils.js';
 
 const map = new maplibregl.Map({
   container: 'map',
@@ -163,6 +122,22 @@ function setEventoMarker(lng, lat) {
   eventoMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
 }
 
+function circleCoords(centerLng, centerLat, radiusInMeters, numPoints) {
+  const metersPerDegreeLat = 111320;
+  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
+  const radiusLng = radiusInMeters / metersPerDegreeLng;
+  const radiusLat = radiusInMeters / metersPerDegreeLat;
+  const coords = [];
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * 2 * Math.PI;
+    const lng = centerLng + radiusLng * Math.cos(angle);
+    const lat = centerLat + radiusLat * Math.sin(angle);
+    coords.push([lng, lat]);
+  }
+  coords.push(coords[0]);
+  return coords;
+}
+
 async function loadEventos() {
   try {
     const res = await fetch(apiUrl('/eventos'));
@@ -231,22 +206,6 @@ const radius = evento.radius || 10;
       },
     });
   }
-}
-
-function circleCoords(centerLng, centerLat, radiusInMeters, numPoints) {
-  const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
-  const radiusLng = radiusInMeters / metersPerDegreeLng;
-  const radiusLat = radiusInMeters / metersPerDegreeLat;
-  const coords = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusLng * Math.cos(angle);
-    const lat = centerLat + radiusLat * Math.sin(angle);
-    coords.push([lng, lat]);
-  }
-  coords.push(coords[0]);
-  return coords;
 }
 
 // --- Modal Detalles Evento ---
@@ -321,6 +280,7 @@ function closeDetalleModal() {
     detalleCleanup = null;
   }
 }
+
 
 async function deleteEvento(id, marker) {
   const err = detalleModalEl.querySelector('#detalle-error');
@@ -686,9 +646,9 @@ async function buildExcludePolygons() {
     for (const evento of eventos) {
       const isNegativo = evento.evento_negativo === true || evento.evento_negativo === 'true';
       if (!isNegativo) continue;
-      const radius = evento.radius || 50;
+      const radius = evento.radius || 10;
       const [lng, lat] = [evento.longitud, evento.latitud];
-      const polygon = circlePolygon(lng, lat, radius, 8);
+      const polygon = circlePolygon(lng, lat, radius, 16);
       polygons.push(polygon);
     }
     return polygons;
