@@ -3,6 +3,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import polyline from '@mapbox/polyline';
 import './map-ui.css';
 import { apiUrl, formatFecha, formatApiError } from './utils.js';
+import { circleCoords, circlePolygon } from './geo.js';
 
 const map = new maplibregl.Map({
   container: 'map',
@@ -122,22 +123,6 @@ function setEventoMarker(lng, lat) {
   eventoMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
 }
 
-function circleCoords(centerLng, centerLat, radiusInMeters, numPoints) {
-  const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
-  const radiusLng = radiusInMeters / metersPerDegreeLng;
-  const radiusLat = radiusInMeters / metersPerDegreeLat;
-  const coords = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusLng * Math.cos(angle);
-    const lat = centerLat + radiusLat * Math.sin(angle);
-    coords.push([lng, lat]);
-  }
-  coords.push(coords[0]);
-  return coords;
-}
-
 async function loadEventos() {
   try {
     const res = await fetch(apiUrl('/eventos'));
@@ -187,7 +172,7 @@ const radius = evento.radius || 10;
     type: 'Feature',
     geometry: {
       type: 'Polygon',
-      coordinates: [circleCoords(evento.longitud, evento.latitud, radius, 32)],
+      coordinates: [circlePolygon(evento.longitud, evento.latitud, radius, 32)],
     },
   };
 
@@ -255,7 +240,7 @@ function openDetalleModal(evento, marker) {
     detalleDeleteBtn = detalleModalEl.querySelector('#detalle-delete');
   }
 
-  const descripcion = evento.descripcion?.trim() || evento.descripcion_evento?.trim() || 'Sin descripción';
+  const descripcion = evento.descripcion_evento?.trim() || evento.descripcion?.trim() || 'Sin descripción';
 
   detalleModalEl.querySelector('#detalle-tipo').textContent = evento.tipo_evento || 'Sin tipo';
   detalleModalEl.querySelector('#detalle-desc').textContent = descripcion;
@@ -656,22 +641,6 @@ async function buildExcludePolygons() {
     console.error('Error building exclude polygons:', e);
     return [];
   }
-}
-
-function circlePolygon(centerLng, centerLat, radiusInMeters, numPoints) {
-  const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
-  const radiusLng = radiusInMeters / metersPerDegreeLng;
-  const radiusLat = radiusInMeters / metersPerDegreeLat;
-  const coords = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusLng * Math.cos(angle);
-    const lat = centerLat + radiusLat * Math.sin(angle);
-    coords.push([lng, lat]);
-  }
-  coords.push(coords[0]);
-  return coords;
 }
 
 function drawRoute(data) {

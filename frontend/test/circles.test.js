@@ -1,59 +1,65 @@
 import { describe, it, expect } from 'vitest';
+import { circleCoords, circlePolygon } from '../src/geo.js';
 
-// Test circleCoords directly without importing main.js
-function circleCoords(centerLng, centerLat, radiusInDegrees, numPoints) {
-  const coords = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusInDegrees * Math.cos(angle);
-    const lat = centerLat + radiusInDegrees * Math.sin(angle);
-    coords.push([lng, lat]);
-  }
-  coords.push(coords[0]);
-  return coords;
-}
-
-function circlePolygon(centerLng, centerLat, radiusInMeters, numPoints) {
-  const metersPerDegreeLat = 111320;
-  const metersPerDegreeLng = 111320 * Math.cos((centerLat * Math.PI) / 180);
-  const radiusLng = radiusInMeters / metersPerDegreeLng;
-  const radiusLat = radiusInMeters / metersPerDegreeLat;
-  const coords = [];
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * 2 * Math.PI;
-    const lng = centerLng + radiusLng * Math.cos(angle);
-    const lat = centerLat + radiusLat * Math.sin(angle);
-    coords.push([lng, lat]);
-  }
-  coords.push(coords[0]);
-  return coords;
-}
-
-describe('circleCoords', () => {
-  it('should return correct number of points', () => {
+describe('circleCoords (radio en grados)', () => {
+  it('cierra el anillo: el primer y el ultimo punto coinciden', () => {
     const coords = circleCoords(0, 0, 0.01, 4);
     expect(coords.length).toBe(5);
     expect(coords[0]).toEqual(coords[4]);
   });
 
-  it('should generate points around center', () => {
+  it('genera puntos alrededor del centro en angulos esperados', () => {
     const coords = circleCoords(0, 0, 0.01, 4);
-    expect(coords[0][0]).toBeGreaterThan(0);
-    expect(coords[1][1]).toBeGreaterThan(0);
-    expect(coords[2][0]).toBeLessThan(0);
+    expect(coords[0][0]).toBeCloseTo(0.01, 5);
+    expect(coords[0][1]).toBeCloseTo(0, 5);
+    expect(coords[1][0]).toBeCloseTo(0, 5);
+    expect(coords[1][1]).toBeCloseTo(0.01, 5);
+    expect(coords[2][0]).toBeCloseTo(-0.01, 5);
+    expect(coords[2][1]).toBeCloseTo(0, 5);
+  });
+
+  it('respeta el centro especificado', () => {
+    const coords = circleCoords(-70, -33, 0.005, 8);
+    expect(coords.length).toBe(9);
+    coords.forEach(([lng, lat]) => {
+      expect(lng).toBeGreaterThan(-70.01);
+      expect(lng).toBeLessThan(-69.99);
+      expect(lat).toBeGreaterThan(-33.01);
+      expect(lat).toBeLessThan(-32.99);
+    });
+  });
+
+  it('devuelve solo el punto repetido cuando numPoints es 1', () => {
+    const coords = circleCoords(0, 0, 1, 1);
+    expect(coords.length).toBe(2);
+    expect(coords[0]).toEqual(coords[1]);
   });
 });
 
-describe('circlePolygon', () => {
-  it('should return correct number of points', () => {
+describe('circlePolygon (radio en metros)', () => {
+  it('cierra el anillo', () => {
     const coords = circlePolygon(0, 0, 10, 4);
     expect(coords.length).toBe(5);
     expect(coords[0]).toEqual(coords[4]);
   });
 
-  it('should generate points in meters', () => {
-    const coords = circlePolygon(0, 0, 10, 4);
-    expect(coords[0][0]).toBeGreaterThan(0);
-    expect(coords[1][1]).toBeGreaterThan(0);
+  it('produce un radio aproximadamente correcto en grados (1 metro ~ 1/111320 grados en lat)', () => {
+    const coords = circlePolygon(0, 0, 111320, 4);
+    expect(coords[0][0]).toBeCloseTo(1, 2);
+    expect(coords[1][1]).toBeCloseTo(1, 2);
+  });
+
+  it('compensa la longitud por la latitud (en latitudes altas el radio en grados es mayor)', () => {
+    const ecuador = circlePolygon(0, 0, 1000, 4);
+    const sur = circlePolygon(0, -60, 1000, 4);
+    const radioLngEcuador = Math.abs(ecuador[0][0]);
+    const radioLngSur = Math.abs(sur[0][0]);
+    expect(radioLngSur).toBeGreaterThan(radioLngEcuador);
+  });
+
+  it('genera la cantidad esperada de puntos para un poligono de 16 lados', () => {
+    const coords = circlePolygon(-70.66, -33.45, 50, 16);
+    expect(coords.length).toBe(17);
+    expect(coords[0]).toEqual(coords[16]);
   });
 });
