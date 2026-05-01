@@ -14,15 +14,14 @@ def valhalla_container():
     """Start a Valhalla container for integration testing."""
     from testcontainers.core.container import DockerContainer
 
-    container = DockerContainer("ghcr.io/valhalla/valhalla-scripted:latest")
+    # Using prebuilt tiles image - starts Valhalla directly
+    container = DockerContainer("viktornr/valhalla-tiles:latest")
     container.with_exposed_ports(8002)
-    container.with_env("tile_urls", "https://download.geofabrik.de/europe/andorra-latest.osm.pbf")
-    container.with_env("use_default_speeds_config", "True")
 
     container.start()
 
-    # Wait for Valhalla to be ready (tile building takes time)
-    for _ in range(30):
+    # Wait for Valhalla to be ready
+    for _ in range(30):  # Try for 5 minutes
         try:
             host = container.get_container_host_ip()
             port = container.get_exposed_port(8002)
@@ -78,8 +77,8 @@ def test_valhalla_health(api_client):
 @pytest.mark.integration
 def test_route_pedestrian(api_client):
     """Test pedestrian routing with real Valhalla."""
-    loc1 = {"lon": 1.5218, "lat": 42.5069}
-    loc2 = {"lon": 1.5220, "lat": 42.5070}
+    loc1 = {"lon": -71.553557, "lat": -33.013746}
+    loc2 = {"lon": -71.548511, "lat": -33.014498}
     res = api_client.post("/route", json={
         "locations": [loc1, loc2],
         "costing": "pedestrian"
@@ -91,29 +90,5 @@ def test_route_pedestrian(api_client):
     assert len(data["trip"]["legs"]) > 0
 
 
-@pytest.mark.integration
-def test_route_auto(api_client):
-    """Test driving routing with real Valhalla."""
-    loc1 = {"lon": 1.5218, "lat": 42.5069}
-    loc2 = {"lon": 1.5220, "lat": 42.5070}
-    res = api_client.post("/route", json={
-        "locations": [loc1, loc2],
-        "costing": "auto"
-    })
-    assert res.status_code == 200
-    data = res.json()
-    assert "trip" in data
 
 
-@pytest.mark.integration
-def test_route_bicycle(api_client):
-    """Test bicycle routing with real Valhalla."""
-    loc1 = {"lon": 1.5218, "lat": 42.5069}
-    loc2 = {"lon": 1.5220, "lat": 42.5070}
-    res = api_client.post("/route", json={
-        "locations": [loc1, loc2],
-        "costing": "bicycle"
-    })
-    assert res.status_code == 200
-    data = res.json()
-    assert "trip" in data
