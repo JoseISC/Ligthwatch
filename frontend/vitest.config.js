@@ -6,7 +6,12 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: 'v8',
-      reporter: ['html', 'text'],
+      reporter: ['html', 'text', 'text-summary'],
+      include: ['src/**/*.js'],
+      exclude: [
+        'src/main.js',
+        '**/*.config.js',
+      ],
     },
   },
 });

@@ -134,6 +134,7 @@ class Evento(BaseModel):
     created_at: Optional[str] = None
     tipo_evento: str
     descripcion: Optional[str] = None
+    descripcion_evento: Optional[str] = None
     activo: bool
     latitud: float
     longitud: float
@@ -266,12 +267,13 @@ async def list_eventos(supabase: SupabaseClient):
     res = supabase.table("eventos").select("*").eq("activo", True).execute()
     eventos = res.data or []
     
-    tipos_res = supabase.table("TipoEventos").select("tipo_evento, evento_negativo, puntuacion, radius").execute()
+    tipos_res = supabase.table("TipoEventos").select("tipo_evento, descripcion_evento, evento_negativo, puntuacion, radius").execute()
     tipos_map = {t["tipo_evento"]: t for t in tipos_res.data or []}
     
     for row in eventos:
         tipo = row.get("tipo_evento")
         if tipo in tipos_map:
+            row["descripcion_evento"] = tipos_map[tipo].get("descripcion_evento")
             row["evento_negativo"] = tipos_map[tipo].get("evento_negativo")
             row["puntuacion"] = tipos_map[tipo].get("puntuacion")
             row["radius"] = tipos_map[tipo].get("radius")
@@ -307,11 +309,11 @@ async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     res = supabase.table("eventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
-    
-    tipo_res = supabase.table("TipoEventos").select("evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
+    tipo_res = supabase.table("TipoEventos").select("descripcion_evento, evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
     tipo_data = tipo_res.data[0] if tipo_res.data else {}
     
     result = res.data[0]
+    result["descripcion_evento"] = tipo_data.get("descripcion_evento")
     result["evento_negativo"] = tipo_data.get("evento_negativo")
     result["puntuacion"] = tipo_data.get("puntuacion")
     result["radius"] = tipo_data.get("radius")
