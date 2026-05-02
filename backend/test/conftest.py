@@ -58,7 +58,6 @@ import subprocess
 import time
 import os
 from supabase import create_client, Client
-from psycopg2 import connect
 
 
 def pytest_configure(config):
@@ -107,6 +106,7 @@ def supabase_client(supabase_local):
 @pytest.fixture
 def db_transaction(supabase_client):
     """Wrap each test in a transaction that rolls back after."""
+    from psycopg2 import connect
     with connect(
         host="127.0.0.1",
         port=54322,
