@@ -11,11 +11,24 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app"))
 
+import allure
 import pytest
 from fastapi.testclient import TestClient
 
 import supabase_client
 from main import _supabase_dep, app
+
+
+def pytest_collection_modifyitems(config, items):
+    """Aplica las etiquetas de Allure ("Backend (FastAPI)") a TODOS los tests
+    recolectados, incluso los que terminan en estado `skipped` (los integration
+    tests cuando Supabase local no esta corriendo). Si se aplicaran via fixture,
+    los skipped no recibirian las etiquetas y aparecerian sueltos en el reporte.
+    """
+    backend_label = "Backend (FastAPI)"
+    for item in items:
+        item.add_marker(allure.epic(backend_label))
+        item.add_marker(allure.parent_suite(backend_label))
 
 
 @pytest.fixture(autouse=True)
