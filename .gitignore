@@ -77,3 +77,4 @@ backend/app/deprecated/*
 
 backend/.coverage
 .cursor/
+.coverage
