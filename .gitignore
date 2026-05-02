@@ -74,3 +74,5 @@ coverage/
 .tmp/
 
 backend/app/deprecated/*
+
+backend/.coverage

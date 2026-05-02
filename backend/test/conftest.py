@@ -48,3 +48,93 @@ def client_no_supabase():
     app.dependency_overrides.clear()
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+# -----------------------------------------------------------------------------
+# Integration Test Fixtures
+# -----------------------------------------------------------------------------
+
+import subprocess
+import time
+import os
+from supabase import create_client, Client
+from psycopg2 import connect
+
+
+def pytest_configure(config):
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+
+
+@pytest.fixture(scope="session")
+def supabase_local():
+    """Skip integration tests if Supabase isn't running."""
+    import socket
+
+    def is_port_open(host, port):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2)
+        try:
+            result = sock.connect_ex((host, port))
+            sock.close()
+            return result == 0
+        except Exception:
+            return False
+
+    if not is_port_open("127.0.0.1", 54321):
+        pytest.skip("Supabase local not running on port 54321")
+
+    if not is_port_open("127.0.0.1", 54322):
+        pytest.skip("Supabase database not running on port 54322")
+
+    yield
+
+
+@pytest.fixture(scope="session")
+def supabase_client(supabase_local):
+    """Create a real Supabase client connected to local instance."""
+    import jwt
+
+    jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
+    payload = {"role": "anon", "iss": "supabase", "iat": 0, "exp": 9999999999}
+    key = jwt.encode(payload, jwt_secret, algorithm="HS256")
+
+    url = "http://127.0.0.1:54321"
+    client = create_client(url, key)
+    return client
+    return client
+
+
+@pytest.fixture
+def db_transaction(supabase_client):
+    """Wrap each test in a transaction that rolls back after."""
+    with connect(
+        host="127.0.0.1",
+        port=54322,
+        database="postgres",
+        user="postgres",
+        password="postgres",
+    ) as conn:
+        conn.autocommit = False
+        cur = conn.cursor()
+
+        cur.execute("BEGIN")
+        try:
+            yield cur
+        finally:
+            cur.execute("ROLLBACK")
+            cur.close()
+            conn.close()
+
+
+@pytest.fixture
+def integration_client(supabase_client):
+    """TestClient with real Supabase client for integration tests."""
+    from main import _supabase_dep
+
+    app.dependency_overrides[_supabase_dep] = lambda: supabase_client
+
+    client = TestClient(app)
+
+    yield client
+
+    app.dependency_overrides.clear()
