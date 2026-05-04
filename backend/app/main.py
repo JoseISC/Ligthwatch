@@ -235,7 +235,7 @@ async def list_tipo_eventos(
     Devuelve los registros de `TipoEventos` para que el cliente elija un `tipo_evento`
     al crear un evento (por ejemplo, desplegable en el formulario).
     """
-    q = supabase.table("tipoeventos").select("*")
+    q = supabase.table("TipoEventos").select("*")
     if solo_activos:
         q = q.eq("activo", True)
     res = q.execute()
@@ -251,7 +251,7 @@ async def list_tipo_eventos(
 )
 async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     payload = body.model_dump(exclude_none=True)
-    res = supabase.table("tipoeventos").insert(payload).execute()
+    res = supabase.table("TipoEventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]
@@ -267,7 +267,7 @@ async def list_eventos(supabase: SupabaseClient):
     res = supabase.table("eventos").select("*").eq("activo", True).execute()
     eventos = res.data or []
     
-    tipos_res = supabase.table("tipoeventos").select("tipo_evento, descripcion_evento, evento_negativo, puntuacion, radius").execute()
+    tipos_res = supabase.table("TipoEventos").select("tipo_evento, descripcion_evento, evento_negativo, puntuacion, radius").execute()
     tipos_map = {t["tipo_evento"]: t for t in tipos_res.data or []}
     
     for row in eventos:
@@ -290,7 +290,7 @@ async def list_eventos(supabase: SupabaseClient):
 )
 async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     check = (
-        supabase.table("tipoeventos")
+        supabase.table("TipoEventos")
         .select("tipo_evento")
         .eq("tipo_evento", body.tipo_evento)
         .eq("activo", True)
@@ -309,7 +309,7 @@ async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     res = supabase.table("eventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
-    tipo_res = supabase.table("tipoeventos").select("descripcion_evento, evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
+    tipo_res = supabase.table("TipoEventos").select("descripcion_evento, evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
     tipo_data = tipo_res.data[0] if tipo_res.data else {}
     
     result = res.data[0]

@@ -20,7 +20,7 @@
 
 | Documento | Contenido |
 |-----------|-----------|
-| [datos/supabase.md](datos/supabase.md) | Esquema: tablas `tipoeventos` y `eventos` |
+| [datos/supabase.md](datos/supabase.md) | Esquema: tablas `TipoEventos` y `eventos` |
 
 ## Configuración y despliegue
 
