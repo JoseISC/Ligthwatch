@@ -7,18 +7,20 @@
 | Documento | Contenido |
 |-----------|-----------|
 | [backend/main.md](backend/main.md) | API FastAPI: endpoints, Valhalla, Supabase, CORS |
+| [backend/testing.md](backend/testing.md) | Pytest: fixtures, tests unitarios e integración, cobertura |
 
 ## Frontend
 
 | Documento | Contenido |
 |-----------|-----------|
-| [frontend/main.md](frontend/main.md) | Mapa MapLibre: rutas, incidentes, tipos, proxy Vite y `VITE_API_URL` |
+| [frontend/main.md](frontend/main.md) | Mapa MapLibre: rutas, eventos, tipos, proxy Vite y `VITE_API_URL` |
+| [frontend/testing.md](frontend/testing.md) | Vitest: configuración, tests unitarios, cobertura |
 
 ## Datos
 
 | Documento | Contenido |
 |-----------|-----------|
-| [datos/supabase.md](datos/supabase.md) | Esquema: tablas `TipoIncidentes` e `Incidentes` |
+| [datos/supabase.md](datos/supabase.md) | Esquema: tablas `TipoEventos` y `eventos` |
 
 ## Configuración y despliegue
 

@@ -73,4 +73,15 @@ coverage/
 .cache/
 .tmp/
 
+# =========================
+# Allure (reportes unificados back+front)
+# =========================
+allure-results/
+allure-report/
+tests-dashboard/
+
 backend/app/deprecated/*
+
+backend/.coverage
+.cursor/
+.coverage

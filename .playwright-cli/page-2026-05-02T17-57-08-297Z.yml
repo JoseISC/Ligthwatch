@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - application "Mapa" [ref=e2]:
+    - region "Map" [ref=e3]
+    - generic:
+      - generic [ref=e4]:
+        - button "Zoom in" [ref=e5] [cursor=pointer]
+        - button "Zoom out" [ref=e7] [cursor=pointer]
+        - button "Drag to rotate map, click to reset north" [ref=e9]
+      - group [ref=e11]:
+        - generic "Toggle attribution" [ref=e12] [cursor=pointer]
+        - link "MapLibre" [ref=e14] [cursor=pointer]:
+          - /url: https://maplibre.org/
+  - navigation "Acciones" [ref=e15]:
+    - button "Modo Ruta" [ref=e16] [cursor=pointer]
+    - button "Añadir Evento" [ref=e17] [cursor=pointer]
+    - button "Nuevo tipo de Evento" [ref=e18] [cursor=pointer]

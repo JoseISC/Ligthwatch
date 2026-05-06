@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 import httpx
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from postgrest.exceptions import APIError
 from pydantic import BaseModel, Field
 from supabase import Client
 
@@ -85,6 +86,11 @@ class RouteRequest(BaseModel):
         description="Fine-tuning options per costing model",
         example={"pedestrian": {"shortest": True}}
     )
+    exclude_polygons: Optional[list[list[list[float]]]] = Field(
+        None,
+        description="Polygons to exclude from routing (Valhalla exclude_polygons parameter)",
+        example=[[[-70.65, -33.46], [-70.64, -33.46], [-70.64, -33.45], [-70.65, -33.45], [-70.65, -33.46]]]
+    )
 
 class HealthResponse(BaseModel):
     status: str
@@ -128,9 +134,14 @@ class Evento(BaseModel):
     id: int
     created_at: Optional[str] = None
     tipo_evento: str
+    descripcion: Optional[str] = None
+    descripcion_evento: Optional[str] = None
     activo: bool
     latitud: float
     longitud: float
+    evento_negativo: Optional[bool] = None
+    puntuacion: Optional[float] = None
+    radius: Optional[float] = None
 
 
 class EventoCreate(BaseModel):
@@ -241,7 +252,15 @@ async def list_tipo_eventos(
 )
 async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     payload = body.model_dump(exclude_none=True)
-    res = supabase.table("TipoEventos").insert(payload).execute()
+    try:
+        res = supabase.table("TipoEventos").insert(payload).execute()
+    except APIError as e:
+        if getattr(e, "code", None) == "23505":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un tipo de evento con el nombre '{body.tipo_evento}'.",
+            ) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]
@@ -255,7 +274,20 @@ async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
 )
 async def list_eventos(supabase: SupabaseClient):
     res = supabase.table("eventos").select("*").eq("activo", True).execute()
-    return res.data or []
+    eventos = res.data or []
+    
+    tipos_res = supabase.table("TipoEventos").select("tipo_evento, descripcion_evento, evento_negativo, puntuacion, radius").execute()
+    tipos_map = {t["tipo_evento"]: t for t in tipos_res.data or []}
+    
+    for row in eventos:
+        tipo = row.get("tipo_evento")
+        if tipo in tipos_map:
+            row["descripcion_evento"] = tipos_map[tipo].get("descripcion_evento")
+            row["evento_negativo"] = tipos_map[tipo].get("evento_negativo")
+            row["puntuacion"] = tipos_map[tipo].get("puntuacion")
+            row["radius"] = tipos_map[tipo].get("radius")
+        
+    return eventos
 
 
 @app.post(
@@ -286,4 +318,38 @@ async def create_evento(supabase: SupabaseClient, body: EventoCreate):
     res = supabase.table("eventos").insert(payload).execute()
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
-    return res.data[0]
+    tipo_res = supabase.table("TipoEventos").select("descripcion_evento, evento_negativo, puntuacion, radius").eq("tipo_evento", body.tipo_evento).limit(1).execute()
+    tipo_data = tipo_res.data[0] if tipo_res.data else {}
+    
+    result = res.data[0]
+    result["descripcion_evento"] = tipo_data.get("descripcion_evento")
+    result["evento_negativo"] = tipo_data.get("evento_negativo")
+    result["puntuacion"] = tipo_data.get("puntuacion")
+    result["radius"] = tipo_data.get("radius")
+    return result
+
+
+@app.delete(
+    "/eventos/{evento_id}",
+    summary="Eliminar evento (soft delete: marca activo=false)",
+    tags=["Eventos"],
+    status_code=204,
+)
+async def delete_evento(supabase: SupabaseClient, evento_id: int):
+    """
+    Marca el evento como inactivo (`activo=false`). Como `GET /eventos` filtra por
+    `activo=true`, el evento ya no aparece en el mapa pero se conserva en la BD
+    para auditoría.
+    """
+    existing = (
+        supabase.table("eventos")
+        .select("id")
+        .eq("id", evento_id)
+        .limit(1)
+        .execute()
+    )
+    if not existing.data:
+        raise HTTPException(status_code=404, detail=f"Evento {evento_id} no encontrado")
+
+    supabase.table("eventos").update({"activo": False}).eq("id", evento_id).execute()
+    return None
