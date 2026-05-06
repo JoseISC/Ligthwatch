@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 import httpx
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from postgrest.exceptions import APIError
 from pydantic import BaseModel, Field
 from supabase import Client
 
@@ -251,7 +252,15 @@ async def list_tipo_eventos(
 )
 async def create_tipo_evento(supabase: SupabaseClient, body: TipoEventoCreate):
     payload = body.model_dump(exclude_none=True)
-    res = supabase.table("TipoEventos").insert(payload).execute()
+    try:
+        res = supabase.table("TipoEventos").insert(payload).execute()
+    except APIError as e:
+        if getattr(e, "code", None) == "23505":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Ya existe un tipo de evento con el nombre '{body.tipo_evento}'.",
+            ) from e
+        raise HTTPException(status_code=500, detail=str(e)) from e
     if not res.data:
         raise HTTPException(status_code=500, detail="La inserción no devolvió datos")
     return res.data[0]

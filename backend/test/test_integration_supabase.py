@@ -40,29 +40,22 @@ def test_create_tipo_evento_integration(integration_client):
 
 @pytest.mark.integration
 def test_duplicate_tipo_evento_integration(integration_client):
-    """Creating a duplicate tipo_evento returns error (unique constraint).
-    
-    Note: This test has isolation issues - data persists across test runs.
-    Known issue: APIError bubbles up instead of returning error response.
-    """
+    """Creating a duplicate tipo_evento returns HTTP 400 (unique constraint)."""
     import uuid
-    from postgrest.exceptions import APIError
-    
+
     unique_name = f"duplicate_test_{uuid.uuid4().hex[:8]}"
-    integration_client.post("/tipo-eventos", json={
+    first = integration_client.post("/tipo-eventos", json={
         "tipo_evento": unique_name,
         "descripcion_evento": "First one",
     })
-    
-    payload = {
+    assert first.status_code == 201
+
+    res = integration_client.post("/tipo-eventos", json={
         "tipo_evento": unique_name,
         "descripcion_evento": "Duplicate",
-    }
-    try:
-        res = integration_client.post("/tipo-eventos", json=payload)
-        assert res.status_code in [400, 500]
-    except APIError:
-        pass
+    })
+    assert res.status_code == 400
+    assert unique_name in res.json()["detail"]
 
 
 @pytest.mark.integration

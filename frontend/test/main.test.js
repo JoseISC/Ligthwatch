@@ -56,6 +56,15 @@ describe('formatFecha', () => {
   it('devuelve "Fecha invalida" para una cadena que no parsea', () => {
     expect(formatFecha('no-es-una-fecha')).toBe('Fecha inválida');
   });
+
+  it('devuelve "Fecha invalida" cuando el constructor Date lanza una excepcion (rama catch)', () => {
+    vi.stubGlobal('Date', function () { throw new Error('fallo interno'); });
+    try {
+      expect(formatFecha('2026-01-01')).toBe('Fecha inválida');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 describe('formatApiError', () => {

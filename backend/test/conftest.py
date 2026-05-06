@@ -79,7 +79,7 @@ def pytest_configure(config):
 
 @pytest.fixture(scope="session")
 def supabase_local():
-    """Skip integration tests if Supabase isn't running."""
+    """Detecta si Supabase local está corriendo. Retorna True/False sin skipear."""
     import socket
 
     def is_port_open(host, port):
@@ -92,18 +92,17 @@ def supabase_local():
         except Exception:
             return False
 
-    if not is_port_open("127.0.0.1", 54321):
-        pytest.skip("Supabase local not running on port 54321")
-
-    if not is_port_open("127.0.0.1", 54322):
-        pytest.skip("Supabase database not running on port 54322")
-
-    yield
+    running = is_port_open("127.0.0.1", 54321) and is_port_open("127.0.0.1", 54322)
+    yield running
 
 
 @pytest.fixture(scope="session")
 def supabase_client(supabase_local):
-    """Create a real Supabase client connected to local instance."""
+    """Cliente Supabase: real si la instancia local está disponible, en memoria si no."""
+    if not supabase_local:
+        from fake_supabase import FakeSupabaseClient
+        return FakeSupabaseClient()
+
     import jwt
 
     jwt_secret = "super-secret-jwt-token-with-at-least-32-characters-long"
@@ -111,9 +110,7 @@ def supabase_client(supabase_local):
     key = jwt.encode(payload, jwt_secret, algorithm="HS256")
 
     url = "http://127.0.0.1:54321"
-    client = create_client(url, key)
-    return client
-    return client
+    return create_client(url, key)
 
 
 @pytest.fixture
