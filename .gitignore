@@ -1,0 +1,87 @@
+# =========================
+# OS / System files
+# =========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python (FastAPI backend)
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+
+# =========================
+# Node / Vite (frontend)
+# =========================
+node_modules/
+dist/
+.vite/
+*.local
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Valhalla data 
+# =========================
+valhalla/data/*
+!valhalla/data/.gitkeep
+
+# =========================
+# IDEs / Editors
+# =========================
+.vscode/
+.idea/
+*.iml
+
+# =========================
+# Misc
+# =========================
+coverage/
+.cache/
+.tmp/
+
+# =========================
+# Allure (reportes unificados back+front)
+# =========================
+allure-results/
+allure-report/
+tests-dashboard/
+
+backend/app/deprecated/*
+
+backend/.coverage
+.cursor/
+.coverage
