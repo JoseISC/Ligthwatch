@@ -8,6 +8,7 @@
 |-----------|-----------|
 | [backend/main.md](backend/main.md) | API FastAPI: endpoints, Valhalla, Supabase, CORS |
 | [backend/testing.md](backend/testing.md) | Pytest: fixtures, tests unitarios e integración, cobertura |
+| [backend/resultados-tests.md](backend/resultados-tests.md) | Resultados actualizados: 24 tests ✔, 98% cobertura |
 
 ## Frontend
 
@@ -15,6 +16,7 @@
 |-----------|-----------|
 | [frontend/main.md](frontend/main.md) | Mapa MapLibre: rutas, eventos, tipos, proxy Vite y `VITE_API_URL` |
 | [frontend/testing.md](frontend/testing.md) | Vitest: configuración, tests unitarios, cobertura |
+| [frontend/resultados-tests.md](frontend/resultados-tests.md) | Resultados actualizados: 29 tests ✔, 100% cobertura |
 
 ## Datos
 
