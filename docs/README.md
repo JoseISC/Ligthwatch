@@ -2,6 +2,12 @@
 
 Índice de la carpeta `docs/`, organizada por tema.
 
+## Manual de usuario
+
+| Documento | Contenido |
+|-----------|-----------|
+| [manual-usuario/README.md](manual-usuario/README.md) | Uso de la aplicación web: mapa, eventos, rutas y solución de problemas |
+
 ## Backend
 
 | Documento | Contenido |
