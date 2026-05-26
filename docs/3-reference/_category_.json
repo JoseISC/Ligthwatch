@@ -1,0 +1,8 @@
+{
+  "label": "Referencia",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "Descripción precisa de la interfaz, modos, mensajes y elementos del mapa."
+  }
+}

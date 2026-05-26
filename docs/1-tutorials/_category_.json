@@ -1,0 +1,8 @@
+{
+  "label": "Tutoriales",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Aprende a usar Ligthwatch desde cero: del entorno levantado al primer evento y tu primera ruta segura."
+  }
+}

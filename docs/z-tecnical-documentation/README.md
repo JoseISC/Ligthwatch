@@ -2,11 +2,18 @@
 
 Índice de la carpeta `docs/`, organizada por tema.
 
-## Manual de usuario
+## Manual de usuario (Diátaxis)
 
-| Documento | Contenido |
-|-----------|-----------|
-| [manual-usuario/README.md](manual-usuario/README.md) | Uso de la aplicación web: mapa, eventos, rutas y solución de problemas |
+Índice principal: [manual-usuario/README.md](manual-usuario/README.md)
+
+| Cuadrante | Carpeta | Contenido |
+|-----------|---------|-----------|
+| Tutoriales | [tutorials/](tutorials/primeros-pasos.md) | Aprendizaje guiado — [Primeros pasos](tutorials/primeros-pasos.md) |
+| Guías prácticas | [how-to/](how-to/registrar-evento.md) | Tareas: eventos, tipos, rutas, exploración |
+| Referencia | [reference/](reference/interfaz.md) | Interfaz, mapa, modos, mensajes |
+| Explicación | [explanation/](explanation/introduccion-ligthwatch.md) | Conceptos, arquitectura, eventos negativos |
+
+Compatible con Docusaurus (`_category_.json` por carpeta, frontmatter y admonitions).
 
 ## Backend
 
