@@ -38,6 +38,12 @@
 | [dependencias/resumen.md](dependencias/resumen.md) | Clasificación MVP vs futuro, decisiones |
 | [dependencias/requirements.md](dependencias/requirements.md) | Contenido y versiones de `requirements.txt` |
 
+## Usuario
+
+| Documento | Contenido |
+|-----------|-----------|
+| [user-manual.md](user-manual.md) | Manual de usuario con imágenes paso a paso |
+
 ## Proyecto (visión y validación)
 
 | Documento | Contenido |
