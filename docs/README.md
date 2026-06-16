@@ -43,6 +43,7 @@
 | Documento | Contenido |
 |-----------|-----------|
 | [user-manual.md](user-manual.md) | Manual de usuario con imágenes paso a paso |
+| [installation-guide.md](installation-guide.md) | Guía de instalación: Docker, Supabase, configuración y puesta en marcha |
 
 ## Proyecto (visión y validación)
 
